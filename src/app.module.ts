@@ -12,6 +12,8 @@ import { MailModule } from './mail/mail.module';
 // import { Service } from './auth/common/modules/.service';
 import { UsersModule } from './modules/users/users.module';
 import { HashingModule } from './common/hashing/hashing.module';
+import { RedisModule } from './common/redis/redis.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -50,7 +52,9 @@ import { HashingModule } from './common/hashing/hashing.module';
     AuthModule,
     MailModule,
     UsersModule,
-    HashingModule
+    HashingModule,
+    RedisModule,
+    NotificationsModule
   ],
   providers: [AppService],
   controllers: [AppController],

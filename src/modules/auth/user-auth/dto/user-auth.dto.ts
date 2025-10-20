@@ -28,7 +28,7 @@ export interface SignupResponse {
 export interface VerificationResponse {
     success: boolean;
     data: {
-        user: any; // We'll fix this in the next step
+        user: any; //  fix this in the next step
     };
 }
 

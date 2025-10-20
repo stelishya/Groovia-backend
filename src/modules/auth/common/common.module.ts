@@ -9,6 +9,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Otp, OtpSchema } from './models/otp.schema';
 import { IOtpServiceToken } from '../user-auth/interfaces/otp.service.interface';
 import { JwtModule } from '@nestjs/jwt';
+import { RedisModule } from 'src/common/redis/redis.module';
+import { IBaseRepositoryToken } from 'src/common/interfaces/base-repository.interface';
 
 @Module({
     providers: [
@@ -24,12 +26,17 @@ import { JwtModule } from '@nestjs/jwt';
             provide: IOtpServiceToken,
             useClass: OtpService,
         },
+        // {
+        //     provide: IBaseRepositoryToken,
+        //     useClass: IBaseRepository,
+        // }
     ],
     imports: [
         MongooseModule.forFeature([
             { name: Otp.name, schema: OtpSchema },
         ]),
-        JwtModule.register({})
+        JwtModule.register({}),
+        RedisModule
     ],
     controllers: [CommonController],
     exports: [ICommonServiceToken, IOtpServiceToken, IOtpRepositoryToken],

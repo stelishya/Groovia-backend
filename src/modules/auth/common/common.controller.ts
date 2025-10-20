@@ -47,17 +47,17 @@ import { Public } from 'src/common/decorators/public.decorator';
       await this._commonService.logoutHandler(req, res);
     }
   
-    @Public()
-    @Post('google')
-    async authGoogle(@Body() body: { credential: string }, @Res() res: Response) {
-      if (!body.credential) {
-        throw new BadRequestException('No credential provided');
-      } else {
-        const resp = await this._commonService.handleGoogleAuth(
-          body.credential,
-          res,
-        );
-        res.status(HttpStatus.OK).json(resp);
-      }
-    }
+    // @Public()
+    // @Post('google')
+    // async authGoogle(@Body() body: { credential: string }, @Res() res: Response) {
+    //   if (!body.credential) {
+    //     throw new BadRequestException('No credential provided');
+    //   } else {
+    //     const resp = await this._commonService.handleGoogleAuth(
+    //       body.credential,
+    //       res,
+    //     );
+    //     res.status(HttpStatus.OK).json(resp);
+    //   }
+    // }
   }

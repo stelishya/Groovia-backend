@@ -3,6 +3,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types, UpdateQuery } from 'mongoose';
 import { User } from '../models/user.schema';
 import { IUserRepository } from '../interfaces/user.repo.interface';
+import { skip } from 'node:test';
+import { ProjectionType } from 'mongoose';
 
 @Injectable()
 export class UserRepository implements IUserRepository {
@@ -10,6 +12,11 @@ export class UserRepository implements IUserRepository {
 
     async create(user: Partial<User>): Promise<User> {
         const newUser = new this._userModel(user);
+        // const user =  this._userModel.findByEmail({email})
+        // const exist = this._userModel.findOne(user:user,role)
+        // if(exist){
+
+        // }
         return newUser.save();
     }
 
@@ -27,5 +34,23 @@ export class UserRepository implements IUserRepository {
             { $set: { password: newPasswordHash } }
         ).exec();
         return result.modifiedCount > 0;
+    }
+    async getUsersForAdmin(
+        filter:FilterQuery<User>,
+        skip:number,
+        limit:number,
+        projection?:ProjectionType<User>,
+    ):Promise<User[]>{
+        return this._userModel
+          .find(filter,projection)
+          .skip(skip)
+          .limit(limit)
+          .exec()
+    }
+    getAllUsersForAdmin(filter: FilterQuery<User>, skip: number, limit: number): Promise<User[]> {
+        return this._userModel.find(filter).skip(skip).limit(limit).exec();
+    }
+    countDocuments(filter?: FilterQuery<User>): Promise<number> {
+        return this._userModel.countDocuments(filter).exec();
     }
 }

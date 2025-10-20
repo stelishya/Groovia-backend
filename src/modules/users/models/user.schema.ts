@@ -9,8 +9,8 @@ export enum Gender {
 }
 export enum Role{
     DANCER = "dancer",
-    // INSTRUCTOR = "Instructor",
-    // ORGANIZER = "Organizer",
+    INSTRUCTOR = "instructor",
+    ORGANIZER = "organizer",
     CLIENT = "client",
 }
 
@@ -72,3 +72,17 @@ export class User{
 }
 
 export const userSchema = SchemaFactory.createForClass(User);
+
+
+
+
+
+
+
+
+
+
+
+
+
+

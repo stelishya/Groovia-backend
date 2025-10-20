@@ -1,19 +1,67 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { IAdminService } from './interfaces/admins.service.interface';
 import { IAdminRepoToken } from './interfaces/admins.repo.interface';
-import type{ IAdminRepo } from './interfaces/admins.repo.interface';
+import type { IAdminRepo } from './interfaces/admins.repo.interface';
+import { Admin } from './models/admins.schema';
+import { GetAllUsersQueryDto } from './dto/admin.dto';
+import { User } from '../users/models/user.schema';
+import { type IUserService, IUserServiceToken } from '../users/interfaces/services/user.service.interface';
+import { Types } from 'mongoose';
+import { SuccessResponseDto } from '../users/dto/user.dto';
 
 @Injectable()
 export class AdminsService implements IAdminService {
+    private readonly _logger = new Logger(AdminsService.name)
+
     constructor(
         @Inject(IAdminRepoToken)
         private readonly _adminRepo: IAdminRepo,
-    ){}
-    async getDashboard(): Promise<void> {
+        @Inject(IUserServiceToken)
+        private readonly _userService: IUserService,
+    ) { }
 
+    async findOne(filter: Partial<Admin>): Promise<Admin | null> {
+        try {
+            this._logger.log('Delegating to AdminRepo to find admin');
+            return this._adminRepo.findOne(filter);
+        } catch (error) {
+            throw new HttpException('Admin not found', HttpStatus.NOT_FOUND);
+        }
     }
 
-    async getAllUsers(): Promise<void> {
-        console.log('working');
+    async createAdmin(adminData: any): Promise<Admin> {
+        adminData.password = await bcrypt.hash(adminData.password, 10);
+        return this._adminRepo.create(adminData);
     }
+
+    async getAllUsers(
+        query: GetAllUsersQueryDto,
+    ): Promise<{ users: User[]; total: number }> {
+        try {
+            this._logger.log('Delegating to UsersService to fetch users');
+            return await this._userService.getAllUsersForAdmin(query);
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            throw new HttpException('No users found', HttpStatus.NOT_FOUND);
+        }
+    }
+
+    async blockUser(userId: Types.ObjectId): Promise<SuccessResponseDto> {
+        try {
+            const updatedUser = await this._userService.blockUser(userId);
+            return {
+                success:true,
+                message: updatedUser?.isBlocked?"User blocked successfully":"User unblocked successfully",
+            }
+        } catch (error) {
+            this._logger.error(`Error toggle blocking user: ${error}`);
+            throw new HttpException("Failed to toggle block user",HttpStatus.INTERNAL_SERVER_ERROR)
+        }
+    }
+
+    // async getDashboard(): Promise<void> {
+
+    // }
+
 }

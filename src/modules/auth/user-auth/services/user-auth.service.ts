@@ -51,6 +51,7 @@ export class UserAuthService implements IUserAuthService {
                 throw new UnauthorizedException('invalid password')
             }
             if (user.isBlocked) {
+                console.log("user is blocked")
                 throw new UnauthorizedException('user is blocked')
             }
             const { accessToken, refreshToken } = await this._commonService.generateToken(user)
@@ -84,7 +85,16 @@ export class UserAuthService implements IUserAuthService {
                 console.log(`[Signup Step 2] OTP verified for ${email}. Attempting to create user.`);
                 try{
                     const hashedPassword = await this._hashingService.hashPassword(password);
-                    const user = await this._userService.createUser({ username, email, phone, role, password:hashedPassword });
+                    // const user = await this._userService.createUser({ username, email, phone, role, password:hashedPassword });
+                     // Convert role to array since schema expects string[]
+ const roleArray: string[] = Array.isArray(role) ? role : [role];
+ const user = await this._userService.createUser({
+ username,
+ email,
+ phone,
+ role: roleArray,
+ password: hashedPassword
+ });
                     console.log(`[Signup Step 2] User created successfully for ${email}`);
                     return {
                         success: true,
@@ -286,7 +296,7 @@ export class UserAuthService implements IUserAuthService {
             console.log("Update result for",user.email,updateResult)
             
             // 5. Create the reset URL and send the email
-            const resetUrl = `${this._configService.get('VITE_SERVER_URL')}/reset-password/${resetToken}`;
+            const resetUrl = `${this._configService.get('FRONTEND_URL')}/reset-password/${resetToken}`;
     
             try {
                 await this._mailService.sendPasswordResetEmail(user.email, { 

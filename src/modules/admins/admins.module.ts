@@ -6,6 +6,7 @@ import { IAdminRepoToken } from './interfaces/admins.repo.interface';
 import { AdminRepository } from './repositories/admin.repository';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Admin, adminSchema } from './models/admins.schema';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   providers: [
@@ -21,7 +22,8 @@ import { Admin, adminSchema } from './models/admins.schema';
   imports: [
     MongooseModule.forFeature([
       { name: Admin.name, schema: adminSchema },
-    ])
+    ]),
+    UsersModule
   ],
   controllers: [AdminsController],
   exports: [IAdminServiceToken]
