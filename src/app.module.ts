@@ -16,6 +16,7 @@ import { RedisModule } from './common/redis/redis.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ClientModule } from './modules/client/client.module';
 import { DancerModule } from './modules/dancer/dancer.module';
+import { BookingsModule } from './modules/bookings/bookings.module';
 
 @Module({
   imports: [
@@ -58,7 +59,8 @@ import { DancerModule } from './modules/dancer/dancer.module';
     RedisModule,
     NotificationsModule,
     ClientModule,
-    DancerModule
+    DancerModule,
+    BookingsModule
   ],
   providers: [AppService],
   controllers: [AppController],

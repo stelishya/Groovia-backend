@@ -19,6 +19,7 @@ import { DancerService } from './dancer.service';
 import { Public } from 'src/common/decorators/public.decorator';
 import { IUserServiceToken, type IUserService } from '../users/interfaces/services/user.service.interface';
 import { JwtAuthGuard } from '../auth/guards/jwtAuth.guard';
+import { ActiveUser } from 'src/common/decorators/active-user.decorator';
 
 
 interface AuthRequest extends Request {
@@ -63,5 +64,13 @@ export class DancerController {
             message: 'Profile updated successfully',
             user: userDetails
         };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('event-requests')
+    @HttpCode(HttpStatus.OK)
+    async getEventRequests(@ActiveUser('userId') dancerId: string) {
+        const requests = await this.dancerService.getEventRequests(dancerId);
+        return { message: 'Event requests retrieved successfully', requests };
     }
 }
