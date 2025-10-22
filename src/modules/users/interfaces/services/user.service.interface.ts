@@ -1,4 +1,4 @@
-import { FilterQuery, Types, UpdateQuery } from "mongoose";
+import { FilterQuery, QueryOptions, Types, UpdateQuery } from "mongoose";
 import { User } from "../../models/user.schema";
 import { GetAllUsersQueryDto } from "src/modules/admins/dto/admin.dto";
 
@@ -16,4 +16,7 @@ export interface IUserService{
         query:GetAllUsersQueryDto,
     ):Promise<{users:User[],total:number}>
     blockUser(userId:Types.ObjectId):Promise<User | null>
+
+    find(filter: FilterQuery<User>, options?: QueryOptions): Promise<User[]>;
+    count(filter: FilterQuery<User>): Promise<number>;
 }

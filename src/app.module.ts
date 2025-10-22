@@ -14,6 +14,8 @@ import { UsersModule } from './modules/users/users.module';
 import { HashingModule } from './common/hashing/hashing.module';
 import { RedisModule } from './common/redis/redis.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ClientModule } from './modules/client/client.module';
+import { DancerModule } from './modules/dancer/dancer.module';
 
 @Module({
   imports: [
@@ -54,7 +56,9 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     UsersModule,
     HashingModule,
     RedisModule,
-    NotificationsModule
+    NotificationsModule,
+    ClientModule,
+    DancerModule
   ],
   providers: [AppService],
   controllers: [AppController],

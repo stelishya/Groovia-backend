@@ -1,4 +1,4 @@
-import { FilterQuery, ProjectionType, Types, UpdateQuery } from 'mongoose';
+import { FilterQuery, ProjectionType, QueryOptions, Types, UpdateQuery } from 'mongoose';
 import { User } from '../models/user.schema';
 
 export const IUserRepositoryToken = Symbol('IUserRepository');
@@ -22,4 +22,7 @@ export interface IUserRepository {
         limit:number,
         projection?:ProjectionType<User>,
     ):Promise<User[]>
+
+    find(filter: FilterQuery<User>, options?: QueryOptions): Promise<User[]>;
+    countDocuments(filter?: FilterQuery<User>): Promise<number>;
 }

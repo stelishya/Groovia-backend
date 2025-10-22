@@ -114,13 +114,13 @@ export class CommonService implements ICommonService{
 //   }
 
     async generateToken(user:User):Promise<{accessToken:string,refreshToken:string}>{
-        const payload = { sub: user._id, email: user.email, role: user.role };
+        const payload = { userId: user._id, email: user.email, role: user.role };
         const accessToken = await this._jwtService.signAsync(payload, {
-            secret: this._configService.get<string>('ACCESS_TOKEN_SECRET'),
-            expiresIn: '15m',
+            secret: this._configService.get<string>('JWT_SECRET'),
+            expiresIn: '1d',
         });
         const refreshToken = await this._jwtService.signAsync(payload, {
-            secret: this._configService.get<string>('REFRESH_TOKEN_SECRET'),
+            secret: this._configService.get<string>('JWT_SECRET'),
             expiresIn: '7d',
         });
         return { accessToken, refreshToken };

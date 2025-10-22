@@ -69,6 +69,31 @@ export class User{
 
     @Prop({type:Boolean,default:false})
     isBlocked:boolean;
+
+    // Dancer Profile Fields
+ @Prop({type:String})
+ bio?:string;
+
+ @Prop({type:Number,min:0})
+ experienceYears?:number;
+
+ @Prop({type:[String]})
+ portfolioLinks?:string[];
+
+ @Prop({type:[String]})
+ danceStyles?:string[];
+
+ @Prop({type:Number,default:0})
+ likes:number;
+
+ @Prop({type:String})
+ profileImage?:string;
+
+ @Prop({type:String})
+ preferredLocation?:string;
+ 
+ @Prop({type:Boolean,default:false})
+ availableForPrograms?:boolean;
 }
 
 export const userSchema = SchemaFactory.createForClass(User);

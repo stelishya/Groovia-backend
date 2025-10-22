@@ -7,17 +7,32 @@ import { UsersModule } from 'src/modules/users/users.module';
 import { MailModule } from 'src/mail/mail.module';
 import { HashingModule } from 'src/common/hashing/hashing.module';
 import { CommonModule } from '../common/common.module';
+import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
+import { TokenService } from '../services/token.service';
+import { JwtStrategy } from '../strategies/jwt.strategy';
+import { JwtRefreshStrategy } from '../strategies/jwtRefresh.strategy';
 
 @Module({
-    imports:[UsersModule, MailModule, HashingModule, CommonModule],
+    imports:[
+        UsersModule, 
+        MailModule, 
+        HashingModule, 
+        CommonModule,
+        PassportModule,    
+        JwtModule.register({}),
+    ],
     controllers:[UserAuthController],
     providers:[
         {
             provide:IUserAuthServiceToken,
             useClass:UserAuthService
         },
-        OtpService
+        OtpService,
+        TokenService,
+        JwtStrategy,
+        JwtRefreshStrategy
     ],
-    exports:[IUserAuthServiceToken]
+    exports:[IUserAuthServiceToken,TokenService]
 })
 export class UserAuthModule {}

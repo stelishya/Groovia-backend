@@ -7,6 +7,7 @@ export class NotificationsController {
 
     @Get('user/:userId')
     async getUserNotifications(@Param('userId') userId: string) {
+        console.log("getUserNotifications in controller",userId)
         return await this.notificationService.getUserNotifications(userId);
     }
 

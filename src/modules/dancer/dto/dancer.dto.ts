@@ -1,0 +1,64 @@
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { IsBoolean, IsOptional, IsString, IsNumber, IsArray, Min, Max } from "class-validator";
+import { Types } from "mongoose";
+
+export class UpdateDancerProfileDto {
+  @ApiPropertyOptional({ example: "johndoe" })
+  @IsString()
+  @IsOptional()
+  username?: string;
+
+  @ApiPropertyOptional({ example: "john@example.com" })
+  @IsString()
+  @IsOptional()
+  email?: string;
+
+  @ApiPropertyOptional({ example: "1234567890" })
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @ApiPropertyOptional({ example: "Passionate dancer with 5 years of experience" })
+  @IsString()
+  @IsOptional()
+  bio?: string;
+
+  @ApiPropertyOptional({ example: 5 })
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  experienceYears?: number;
+
+  @ApiPropertyOptional({ example: ["https://instagram.com/dancer", "https://youtube.com/dancer"] })
+  @IsArray()
+  @IsOptional()
+  portfolioLinks?: string[];
+
+  @ApiPropertyOptional({ example: ["Hip Hop", "Contemporary", "Ballet"] })
+  @IsArray()
+  @IsOptional()
+  danceStyles?: string[];
+
+  @ApiPropertyOptional({ example: "New York" })
+  @IsString()
+  @IsOptional()
+  preferredLocation?: string;
+
+  @ApiPropertyOptional({ example: true })
+  @IsBoolean()
+  @IsOptional()
+  availableForPrograms?: boolean;
+}
+
+export class CreateReviewDto {
+
+  @ApiProperty({ example: 5, minimum: 1, maximum: 5 })
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  rating: number;
+
+  @ApiProperty({ example: "Amazing dancer! Very professional and talented." })
+  @IsString()
+  comment: string;
+}
