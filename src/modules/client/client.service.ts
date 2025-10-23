@@ -1,10 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { type IUserService, IUserServiceToken } from '../users/interfaces/services/user.service.interface';
 import { User } from '../users/models/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Events } from './models/events.schema';
 import { Model } from 'mongoose';
-import { CreateRequestDto } from './dto/create-request.dto';
+import { CreateRequestDto, updateBookingStatusDto } from './dto/client.dto';
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Injectable()
@@ -58,11 +58,50 @@ export class ClientService {
         return await newRequest.save();
     }
 
-    async getEventRequests(clientId: string): Promise<Events[]> {
-        return this._eventModel
-            .find({ clientId })
-            .populate('dancerId', 'username profileImage') // Populate dancer's username and profile image
-            .sort({ createdAt: -1 })
+    async getEventRequests(clientId: string, options: { page: number; limit: number; search?: string; status?: string; sortBy?: string; }): Promise<{ requests: Events[], total: number }> {
+        const { page, limit, search, status, sortBy } = options;
+        const query: any = { clientId };
+
+        if (search) {
+            // This is a simple search on the 'event' field. You might want to expand this.
+            query.event = { $regex: search, $options: 'i' };
+        }
+
+        if (status) {
+            query.status = status;
+        }
+
+        const sortOptions: any = {};
+        if (sortBy === 'date') {
+            sortOptions.date = -1; // Newest first
+        } else {
+            sortOptions.createdAt = -1; // Default sort
+        }
+
+        const requests = await this._eventModel
+            .find(query)
+            .populate('dancerId', 'username profileImage')
+            .sort(sortOptions)
+            .skip((page - 1) * limit)
+            .limit(limit)
             .exec();
+
+        const total = await this._eventModel.countDocuments(query);
+
+        return { requests, total };
+    }
+
+    async updateEventRequestStatus(eventId: string, statusDto: updateBookingStatusDto): Promise<Events> {
+        const event = await this._eventModel.findByIdAndUpdate(
+            eventId,
+            { status: statusDto.status },
+            { new: true },
+        );
+
+        if (!event) {
+            throw new NotFoundException(`Event with ID ${eventId} not found`);
+        }
+
+        return event;
     }
 }

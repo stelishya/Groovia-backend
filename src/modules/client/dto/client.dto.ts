@@ -21,3 +21,9 @@ export class CreateRequestDto {
   @IsNotEmpty()
   budget: string;
 }
+
+export class updateBookingStatusDto{
+  @IsString()
+  @IsNotEmpty()
+  status: string;
+}

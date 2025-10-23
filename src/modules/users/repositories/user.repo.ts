@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, QueryOptions, Types, UpdateQuery } from 'mongoose';
-import { User } from '../models/user.schema';
+import { User, UserDocument } from '../models/user.schema';
 import { IUserRepository } from '../interfaces/user.repo.interface';
 import { skip } from 'node:test';
 import { ProjectionType } from 'mongoose';
@@ -66,5 +66,8 @@ export class UserRepository implements IUserRepository {
             query = query.limit(options.limit);
         }
         return query.exec();
+    }
+    findById(id: string | Types.ObjectId): Promise<UserDocument | null> {
+        return this._userModel.findById(id).exec();
     }
 }

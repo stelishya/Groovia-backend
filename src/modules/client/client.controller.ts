@@ -1,6 +1,6 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { Public } from 'src/common/decorators/public.decorator';
-import { CreateRequestDto } from './dto/create-request.dto';
+import { CreateRequestDto, updateBookingStatusDto } from './dto/client.dto';
 import { ClientService } from './client.service';
 import { ActiveUser } from 'src/common/decorators/active-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwtAuth.guard';
@@ -41,8 +41,26 @@ export class ClientController {
     @UseGuards(JwtAuthGuard)
     @Get('event-requests')
     @HttpCode(HttpStatus.OK)
-    async getEventRequests(@ActiveUser('userId') clientId: string) {
-        const requests = await this._clientService.getEventRequests(clientId);
-        return { message: 'Event requests retrieved successfully', requests };
+    async getEventRequests(
+        @ActiveUser('userId') clientId: string,
+        @Query('page') page: number = 1,
+        @Query('limit') limit: number = 10,
+        @Query('search') search?: string,
+        @Query('status') status?: string,
+        @Query('sortBy') sortBy?: string,
+    ) {
+        const { requests, total } = await this._clientService.getEventRequests(clientId, { page, limit, search, status, sortBy });
+        return { message: 'Event requests retrieved successfully', requests, total, page, limit };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Patch('event-requests/:id/status')
+    @HttpCode(HttpStatus.OK)
+    async updateEventRequestStatus(
+        @Param('id') eventId: string,
+        @Body() statusDto: updateBookingStatusDto,
+    ) {
+        const updatedRequest = await this._clientService.updateEventRequestStatus(eventId, statusDto);
+        return { message: 'Booking status updated successfully', request: updatedRequest };
     }
 }

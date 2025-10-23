@@ -1,6 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { IUserService } from '../interfaces/services/user.service.interface';
-import { User } from '../models/user.schema';
+import { User, UserDocument } from '../models/user.schema';
 import { FilterQuery, Model, ObjectId, Types, UpdateQuery, Document as MongooseDocument, QueryOptions, } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { type IUserRepository, IUserRepositoryToken } from '../interfaces/user.repo.interface';
@@ -90,5 +90,9 @@ export class UsersService implements IUserService {
     }
     count(filter: FilterQuery<User>): Promise<number> {
         return this._userRepository.countDocuments(filter);
+    }
+
+    findById(id: string | Types.ObjectId): Promise<UserDocument | null> {
+        return this._userRepository.findById(id);
     }
 }

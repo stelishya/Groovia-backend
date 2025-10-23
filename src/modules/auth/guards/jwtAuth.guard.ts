@@ -45,7 +45,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         isAccessTokenExpired: true,
       });
     }
-    console.log("i think token not expired")
+    console.log("token not expired")
     if (err || !user) {
       const res = context.switchToHttp().getResponse<Response>();
       res.setHeader(

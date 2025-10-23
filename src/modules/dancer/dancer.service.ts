@@ -1,4 +1,4 @@
-import { ConsoleLogger, Inject, Injectable } from '@nestjs/common';
+import { ConsoleLogger, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Model, Types } from 'mongoose';
 import { UpdateDancerProfileDto } from './dto/dancer.dto';
 import { type IUserService, IUserServiceToken } from '../users/interfaces/services/user.service.interface';
@@ -31,11 +31,57 @@ export class DancerService {
         return userDetails;
     }
 
-    async getEventRequests(dancerId: string): Promise<Events[]> {
-        return this._eventModel
-            .find({ dancerId })
-            .populate('clientId', 'username profileImage') // Populate client's username and profile image
-            .sort({ createdAt: -1 })
+    async getEventRequests(dancerId: string, options: { page: number; limit: number; search?: string; status?: string; sortBy?: string; }): Promise<{ requests: Events[], total: number }> {
+        const { page, limit, search, status, sortBy } = options;
+        const query: any = { dancerId };
+
+        if (search) {
+            // This is a simple search on the 'event' field. You might want to expand this.
+            query.event = { $regex: search, $options: 'i' };
+        }
+
+        if (status) {
+            query.status = status;
+        }
+
+        const sortOptions: any = {};
+        if (sortBy === 'date') {
+            sortOptions.date = -1; // Newest first
+        } else {
+            sortOptions.createdAt = -1; // Default sort
+        }
+
+        const requests = await this._eventModel
+            .find(query)
+            .populate('clientId', 'username profileImage')
+            .sort(sortOptions)
+            .skip((page - 1) * limit)
+            .limit(limit)
             .exec();
+
+        const total = await this._eventModel.countDocuments(query);
+
+        return { requests, total };
+    }
+
+    async toggleLike(dancerId: string, userId: string): Promise<User> {
+        const dancer = await this.userService.findById(dancerId);
+        if (!dancer) {
+            throw new NotFoundException('Dancer not found');
+        }
+
+        const userObjectId = new Types.ObjectId(userId);
+        const likes = dancer.likes.map(id => id.toString());
+        const userIndex = likes.indexOf(userId);
+
+        if (userIndex === -1) {
+            // User has not liked yet, so add the like
+            dancer.likes.push(userObjectId);
+        } else {
+            // User has already liked, so remove the like
+            dancer.likes.splice(userIndex, 1);
+        }
+
+        return await dancer.save();
     }
 }

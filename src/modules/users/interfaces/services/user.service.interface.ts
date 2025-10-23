@@ -1,5 +1,5 @@
 import { FilterQuery, QueryOptions, Types, UpdateQuery } from "mongoose";
-import { User } from "../../models/user.schema";
+import { User, UserDocument } from "../../models/user.schema";
 import { GetAllUsersQueryDto } from "src/modules/admins/dto/admin.dto";
 
 export const IUserServiceToken =  Symbol('IUserService');
@@ -11,6 +11,7 @@ export interface IUserService{
     updateOne(filter:FilterQuery<User>,update:UpdateQuery<User>):Promise<User|null>;
     updatePassword(userId:Types.ObjectId,newPassword:string):Promise<boolean>;
     findByEmail(email:string):Promise<User|null>;
+    findById(id: string | Types.ObjectId): Promise<UserDocument | null>;
 
     getAllUsersForAdmin(
         query:GetAllUsersQueryDto,

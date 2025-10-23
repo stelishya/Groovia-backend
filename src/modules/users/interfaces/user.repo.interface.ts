@@ -1,5 +1,5 @@
 import { FilterQuery, ProjectionType, QueryOptions, Types, UpdateQuery } from 'mongoose';
-import { User } from '../models/user.schema';
+import { User, UserDocument } from '../models/user.schema';
 
 export const IUserRepositoryToken = Symbol('IUserRepository');
 
@@ -25,4 +25,6 @@ export interface IUserRepository {
 
     find(filter: FilterQuery<User>, options?: QueryOptions): Promise<User[]>;
     countDocuments(filter?: FilterQuery<User>): Promise<number>;
+
+    findById(id: string | Types.ObjectId): Promise<UserDocument | null>;
 }

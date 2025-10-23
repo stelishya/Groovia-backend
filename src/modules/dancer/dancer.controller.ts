@@ -9,7 +9,8 @@ import {
     HttpCode,
     HttpStatus,
     UseGuards,
-    Inject
+    Inject,
+    Query
 } from '@nestjs/common';
 import { Request } from 'express';
 import { Types } from 'mongoose';
@@ -69,8 +70,26 @@ export class DancerController {
     @UseGuards(JwtAuthGuard)
     @Get('event-requests')
     @HttpCode(HttpStatus.OK)
-    async getEventRequests(@ActiveUser('userId') dancerId: string) {
-        const requests = await this.dancerService.getEventRequests(dancerId);
-        return { message: 'Event requests retrieved successfully', requests };
+    async getEventRequests(
+        @ActiveUser('userId') dancerId: string,
+        @Query('page') page: number = 1,
+        @Query('limit') limit: number = 10,
+        @Query('search') search?: string,
+        @Query('status') status?: string,
+        @Query('sortBy') sortBy?: string,
+    ) {
+        const { requests, total } = await this.dancerService.getEventRequests(dancerId, { page, limit, search, status, sortBy });
+        return { message: 'Event requests retrieved successfully', requests, total, page, limit };
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post(':dancerId/like')
+    @HttpCode(HttpStatus.OK)
+    async toggleLike(
+        @Param('dancerId') dancerId: string,
+        @ActiveUser('userId') userId: string,
+    ) {
+        const updatedDancer = await this.dancerService.toggleLike(dancerId, userId);
+        return { message: 'Like status updated successfully', dancer: updatedDancer };
     }
 }
