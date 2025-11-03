@@ -21,6 +21,8 @@ import { Public } from 'src/common/decorators/public.decorator';
 import { IUserServiceToken, type IUserService } from '../users/interfaces/services/user.service.interface';
 import { JwtAuthGuard } from '../auth/guards/jwtAuth.guard';
 import { ActiveUser } from 'src/common/decorators/active-user.decorator';
+import { MESSAGES } from 'src/common/constants/constants';
+import { ApiResponse } from 'src/common/models/commonResponse.model';
 
 
 interface AuthRequest extends Request {
@@ -42,6 +44,14 @@ export class DancerController {
     }
 
     @UseGuards(JwtAuthGuard)
+@Get('profile')
+@HttpCode(HttpStatus.OK)
+async getProfile(@Req() req: AuthRequest) {
+  // req.user contains { userId, email, role, ... }
+  return this.dancerService.getProfileByUserId(req.user.userId);
+}
+
+    @UseGuards(JwtAuthGuard)
     @Patch('profile')
     @HttpCode(HttpStatus.OK)
     async updateProfile(
@@ -61,10 +71,7 @@ export class DancerController {
         
         // const { password, ...userDetails } = updatedUser.toObject();
          const userDetails = await this.dancerService.updateProfile(userId, updateData);
-        return {
-            message: 'Profile updated successfully',
-            user: userDetails
-        };
+        return ApiResponse.success({ message: MESSAGES.PROFILE_UPDATED_SUCCESSFULLY, user: userDetails });
     }
 
     @UseGuards(JwtAuthGuard)
@@ -79,7 +86,8 @@ export class DancerController {
         @Query('sortBy') sortBy?: string,
     ) {
         const { requests, total } = await this.dancerService.getEventRequests(dancerId, { page, limit, search, status, sortBy });
-        return { message: 'Event requests retrieved successfully', requests, total, page, limit };
+        // return { message: 'Event requests retrieved successfully', requests, total, page, limit };
+        return ApiResponse.success({ message: MESSAGES.EVENT_REQUESTS_RETRIEVED_SUCCESSFULLY, requests, total, page, limit });
     }
 
     @UseGuards(JwtAuthGuard)
@@ -90,6 +98,7 @@ export class DancerController {
         @ActiveUser('userId') userId: string,
     ) {
         const updatedDancer = await this.dancerService.toggleLike(dancerId, userId);
-        return { message: 'Like status updated successfully', dancer: updatedDancer };
+        // return { message: 'Like status updated successfully', dancer: updatedDancer };
+        return ApiResponse.success({ message: MESSAGES.LIKE_STATUS_UPDATED_SUCCESSFULLY, dancer: updatedDancer });
     }
 }

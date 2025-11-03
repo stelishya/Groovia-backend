@@ -14,6 +14,15 @@ export class ClientService {
         private readonly userService: IUserService,
         @InjectModel(Events.name) private readonly _eventModel: Model<Events>
     ) { }
+
+    async getProfileByUserId(userId: string): Promise<User> {
+        const user = await this.userService.findById(userId);
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+        return user;
+    }
+
     async getAllDancers(options: {
         location?: string;
         sortBy?: string;
@@ -24,7 +33,10 @@ export class ClientService {
         // role?: string, 
         // availableForPrograms?: boolean
     }): Promise<{ dancers: User[], total: number }> {
-        const { location, sortBy, page, limit, danceStyle, search } = options;
+        // const { location, sortBy, page, limit, danceStyle, search } = options;
+         const { location, sortBy, danceStyle, search } = options;
+ const page = parseInt(options.page as any, 10) || 1;
+ const limit = parseInt(options.limit as any, 10) || 1;
 
         const query: any = { role: 'dancer', availableForPrograms: true };
         if (location) {

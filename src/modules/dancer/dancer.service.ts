@@ -14,6 +14,14 @@ export class DancerService {
         @InjectModel(Events.name) private readonly _eventModel: Model<Events>
     ) { }
 
+    async getProfileByUserId(userId: string): Promise<User> {
+        const user = await this.userService.findById(userId);
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+        return user;
+    }
+
     async updateProfile(userId: Types.ObjectId, updateData: UpdateDancerProfileDto) {
         console.log("updateProfile in dancer.service.ts")
         // Update user in database
