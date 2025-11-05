@@ -5,10 +5,15 @@ import { User, UserDocument } from '../models/user.schema';
 import { IUserRepository } from '../interfaces/user.repo.interface';
 import { skip } from 'node:test';
 import { ProjectionType } from 'mongoose';
+import { BaseRepository } from 'src/common/repositories/base.repo';
 
 @Injectable()
-export class UserRepository implements IUserRepository {
-    constructor(@InjectModel(User.name) private readonly _userModel: Model<User>) { }
+export class UserRepository 
+extends BaseRepository<User, UserDocument> 
+implements IUserRepository {
+    constructor(@InjectModel(User.name) private readonly _userModel: Model<UserDocument>) {
+        super(_userModel)
+     }
 
     async create(user: Partial<User>): Promise<User> {
         const newUser = new this._userModel(user);

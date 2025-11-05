@@ -13,6 +13,13 @@ export enum Role{
     ORGANIZER = "organizer",
     CLIENT = "client",
 }
+export enum Language {
+    ENGLISH = "English",
+    SPANISH = "Spanish",
+    FRENCH = "French",
+    GERMAN = "German",
+    HINDI = "Hindi",
+}
 
 @Schema({timestamps:true})
 export class User{
@@ -30,14 +37,17 @@ export class User{
             return !this.googleId;
         },
         minlength:6,
-        // validate:{
-        //     validator:(value:string)=>{
-        //         return this.googleId || (value && value.length >= 6);
-        //     },
-        //     message: 'Password must be at least 6 characters long',
-        // },
+        validate:{
+            validator:function(value:string){
+                return this.googleId || (value && value.length >= 6);
+            },
+            message: 'Password must be at least 6 characters long',
+        },
     })
     password:string;
+
+    @Prop({ enum: Language, default: Language.ENGLISH })
+    language?: Language;
 
     @Prop({
         type:String,

@@ -95,4 +95,12 @@ export class UsersService implements IUserService {
     findById(id: string | Types.ObjectId): Promise<UserDocument | null> {
         return this._userRepository.findById(id);
     }
+
+    createGoogleUser(userDto: Partial<User>): Promise<User> {
+        return this._userRepository.create(userDto);
+    }
+
+    updateUserGoogleId(userId: Types.ObjectId, googleId: string): Promise<User| null> {
+        return this._userRepository.updateOne({ _id: userId }, { googleId });
+    }
 }

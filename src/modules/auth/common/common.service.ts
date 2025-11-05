@@ -1,21 +1,22 @@
-import { BadRequestException, HttpStatus, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request, Response } from 'express';
-import { User } from 'src/modules/users/models/user.schema';
+import { Language, User } from 'src/modules/users/models/user.schema';
 import { ICommonService } from './interfaces/common-service.interface';
 import { OAuth2Client } from 'google-auth-library';
-// import { type IUserService, IUserServiceToken } from 'src/modules/users/interfaces/services/user.service.interface';
+import { type IUserService, IUserServiceToken } from 'src/modules/users/interfaces/services/user.service.interface';
 import { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { RedisService } from 'src/common/redis/redis.service';
+import { HttpStatus } from 'src/common/enums/http-status.enum';
 
 @Injectable()
 export class CommonService implements ICommonService{
     private readonly _logger= new Logger(CommonService.name)
     private _googleClient:OAuth2Client
     constructor(
-        // @Inject(IUserServiceToken)
-        // private readonly _userService:IUserService,
+        @Inject(IUserServiceToken)
+        private readonly _userService:IUserService,
         private readonly _jwtService:JwtService,
         private readonly _configService:ConfigService,
         private readonly _redisService:RedisService,
@@ -48,70 +49,91 @@ export class CommonService implements ICommonService{
             res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message:'Logout failed'})
         }
     }
+    private _convertToLanguageEnum(
+    lang: string | undefined,
+  ): Language | undefined {
+    if (!lang) return undefined;
+
+    const language = lang.split('-')[0].toUpperCase();
+
+    // Mapping enum values
+    const languageMap: { [key: string]: Language } = {
+      EN: Language.ENGLISH,
+      ES: Language.SPANISH,
+      FR: Language.FRENCH,
+      DE: Language.GERMAN,
+      HI: Language.HINDI,
+    };
+
+    return languageMap[language] || Language.ENGLISH; // Default to English if not found
+  }
     // google authentication
-//     async handleGoogleAuth(
-//     credential: string,
-//     res: Response,
-//   ): Promise<{ accessToken: string; message: string }> {
-//     try {
-//       const ticket = await this._googleClient.verifyIdToken({
-//         idToken: credential,
-//         audience: this._configService.get<string>('GOOGLE_CLIENT_ID'),
-//       });
+  async handleGoogleAuth(
+    credential: string,
+    res: Response,
+    role: 'client'|'dancer'
+  ): Promise<{ accessToken: string; message: string }> {
+    try {
+      const ticket = await this._googleClient.verifyIdToken({
+        idToken: credential,
+        audience: this._configService.get<string>('GOOGLE_CLIENT_ID'),
+      });
 
-//       const payload = ticket.getPayload();
+      const payload = ticket.getPayload();
 
-//       if (!payload || !payload.email) {
-//         throw new BadRequestException('Invalid Google Token');
-//       }
+      if (!payload || !payload.email) {
+        throw new BadRequestException('Invalid Google Token');
+      }
 
-//       const {
-//         email,
-//         name: fullname,
-//         email_verified,
-//         sub: googleId,
-//         locale,
-//         picture: profileImage,
-//       } = payload;
-//       if (!email_verified) {
-//         throw new BadRequestException('Email not verified');
-//       }
+      const {
+        email,
+        name: fullname,
+        email_verified,
+        sub:googleId,
+        locale,
+        picture: profileImage,
+      } = payload;
+      if (!email_verified) {
+        throw new BadRequestException('Email not verified');
+      }
 
-//       const language = this._convertToLanguageEnum(locale);
+      const language = this._convertToLanguageEnum(locale);
 
-//       let user: User | null = await this._userService.findByEmail(email);
-//       if (!user) {
-//         user = await this._userService.createGoogleUser({
-//           email,
-//           fullname,
-//           googleId,
-//           language,
-//           profileImage,
-//         });
-//       }
+      let user: User | null = await this._userService.findByEmail(email);
+      if (!user) {
+        user = await this._userService.createGoogleUser({
+          email,
+          username:fullname,
+          googleId,
+          language,
+          profileImage,
+          role: [role ?? 'dancer'],   // default role
+          // isGoogleUser: true,
+        });
+      }
 
-//       if (user && !user.googleId) {
-//         user = await this._userService.updateUserGoogleId(user._id, googleId);
-//       }
-//       if (user) {
-//         const { accessToken, refreshToken } = await this.generateToken(
-//           user,
-//           user.isEditor ? Role.CLIENT : Role.DANCER,
-//         );
+      if (user && !user.googleId) {
+        user = await this._userService.updateUserGoogleId(user._id, googleId);
+      }
+      if (user) {
+        const { accessToken, refreshToken } = await this.generateToken(
+          user,
+          // user.role ? Role.CLIENT : Role.DANCER,
+        );
 
-//         this.setRefreshTokenCookie(res, refreshToken);
+        this.setRefreshTokenCookie(res, refreshToken);
 
-//         return {
-//           accessToken,
-//           message: 'Google sign-in successful',
-//         };
-//       } else {
-//         throw new InternalServerErrorException('Unable to sign in via Google');
-//       }
-//     } catch (error) {
-//       throw new BadRequestException('Invalid google Token');
-//     }
-//   }
+        return {
+          accessToken,
+          message: 'Google sign-in successful',
+        };
+      } else {
+        throw new InternalServerErrorException('Unable to sign in via Google');
+      }
+    } catch (error) {
+      throw new BadRequestException('Invalid google Token');
+    }
+  }
 
     async generateToken(user:User):Promise<{accessToken:string,refreshToken:string}>{
         const payload = { userId: user._id, email: user.email, role: user.role };

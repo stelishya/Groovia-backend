@@ -7,10 +7,11 @@ export const ICommonServiceToken = Symbol('ICommonService')
 export interface ICommonService{
 
     logoutHandler(req:Request,res:Response):Promise<void>;
-    // handleGoogleAuth(
-    //     credential: string,
-    //     res:Response
-    // ):Promise<{accessToken:string,message:string}>;
+    handleGoogleAuth(
+        credential: string,
+        res:Response,
+        role:'client'|'dancer'
+    ):Promise<{accessToken:string,message:string}>;
     generateToken(user:User | Admin):Promise<{accessToken:string,refreshToken:string}>;
     setRefreshTokenCookie(
         res:Response,
