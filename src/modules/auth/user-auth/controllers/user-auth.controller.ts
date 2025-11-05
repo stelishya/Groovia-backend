@@ -4,7 +4,7 @@ import {
     Body,
     Res,
     HttpCode,
-    HttpStatus,
+    // HttpStatus,
     Inject,
  } from '@nestjs/common';
 import type{Request, Response} from 'express';
@@ -13,6 +13,7 @@ import type{ IUserAuthService} from '../interfaces/user-auth.service.interface';
 import { IUserAuthServiceToken } from '../interfaces/user-auth.service.interface';
 import type{ VerifyOtpDto,SignupDto } from '../dto/user-auth.dto';
 import { Public } from '../../../../common/decorators/public.decorator';
+import { HttpStatus } from 'src/common/enums/http-status.enum';
 
 
 @Controller('auth/user')

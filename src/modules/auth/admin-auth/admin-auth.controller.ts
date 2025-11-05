@@ -1,9 +1,10 @@
-import { BadRequestException, Body, Controller, HttpCode, HttpStatus, Inject, Logger, Post, Res } from '@nestjs/common';
+import { BadRequestException, Body, Controller, HttpCode, Inject, Logger, Post, Res } from '@nestjs/common';
 import { type Response } from 'express';
 import { type IAdminAuthService, IAdminAuthServiceToken } from './interfaces/admin-auth.service.interface';
 import { Public } from 'src/common/decorators/public.decorator';
 import { AdminLoginDto, AdminLoginResponseDto } from './dto/admin-auth.dto';
 import { Admin } from 'src/modules/admins/models/admins.schema';
+import { HttpStatus } from 'src/common/enums/http-status.enum';
 
 @Controller('auth/admin')
 export class AdminAuthController {

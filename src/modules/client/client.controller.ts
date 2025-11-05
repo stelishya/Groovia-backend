@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { Public } from 'src/common/decorators/public.decorator';
 import { CreateRequestDto, updateBookingStatusDto } from './dto/client.dto';
 import { ClientService } from './client.service';
@@ -6,6 +6,7 @@ import { ActiveUser } from 'src/common/decorators/active-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwtAuth.guard';
 import { MESSAGES } from 'src/common/constants/constants';
 import { ApiResponse } from 'src/common/models/commonResponse.model';
+import { HttpStatus } from 'src/common/enums/http-status.enum';
 
 interface AuthRequest extends Request {
     user: {

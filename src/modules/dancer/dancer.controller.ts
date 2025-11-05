@@ -7,7 +7,7 @@ import {
     Param,
     Req,
     HttpCode,
-    HttpStatus,
+    // HttpStatus,
     UseGuards,
     Inject,
     Query
@@ -23,6 +23,7 @@ import { JwtAuthGuard } from '../auth/guards/jwtAuth.guard';
 import { ActiveUser } from 'src/common/decorators/active-user.decorator';
 import { MESSAGES } from 'src/common/constants/constants';
 import { ApiResponse } from 'src/common/models/commonResponse.model';
+import { HttpStatus } from 'src/common/enums/http-status.enum';
 
 
 interface AuthRequest extends Request {

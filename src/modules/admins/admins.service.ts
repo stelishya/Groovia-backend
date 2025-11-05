@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { HttpException, Inject, Injectable, Logger } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { IAdminService } from './interfaces/admins.service.interface';
 import { IAdminRepoToken } from './interfaces/admins.repo.interface';
@@ -9,6 +9,7 @@ import { User } from '../users/models/user.schema';
 import { type IUserService, IUserServiceToken } from '../users/interfaces/services/user.service.interface';
 import { Types } from 'mongoose';
 import { SuccessResponseDto } from '../users/dto/user.dto';
+import { HttpStatus } from 'src/common/enums/http-status.enum';
 
 @Injectable()
 export class AdminsService implements IAdminService {

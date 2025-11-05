@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
+import { HttpStatus } from 'src/common/enums/http-status.enum';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;

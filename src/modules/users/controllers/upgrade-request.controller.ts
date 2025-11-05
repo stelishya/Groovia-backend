@@ -9,7 +9,7 @@ import {
     UploadedFile,
     Req,
     HttpCode,
-    HttpStatus,
+    // HttpStatus,
     Inject
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -18,6 +18,7 @@ import { extname } from 'path';
 import { Request } from 'express';
 import {type IUpgradeRequestService, IUpgradeRequestServiceToken } from '../interfaces/upgrade-request.service.interface';
 import { Public } from 'src/common/decorators/public.decorator';
+import { HttpStatus } from 'src/common/enums/http-status.enum';
 
 @Controller('users')
 export class UpgradeRequestController {

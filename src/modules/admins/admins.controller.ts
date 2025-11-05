@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, Inject, Logger, Param, Patch, Query } from '@nestjs/common';
+import { Controller, Get, Inject, Logger, Param, Patch, Query } from '@nestjs/common';
 import { IAdminServiceToken } from './interfaces/admins.service.interface';
 import type { IAdminService } from './interfaces/admins.service.interface';
 import type{ GetAllUsersQueryDto } from './dto/admin.dto';
@@ -8,6 +8,7 @@ import { SuccessResponseDto } from '../users/dto/user.dto';
 import { Role } from 'src/common/enums/role.enum';
 import { Types } from 'mongoose';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { HttpStatus } from 'src/common/enums/http-status.enum';
 
 @Controller('admins')
 export class AdminsController {

@@ -1,4 +1,28 @@
-import { IsString, IsNotEmpty, IsMongoId, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsMongoId, IsDateString, registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
+
+// Custom validator to check if date is in the future
+function IsDateInFuture(validationOptions?: ValidationOptions) {
+  return function (object: Object, propertyName: string) {
+    registerDecorator({
+      name: 'isDateInFuture',
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          if (!value) return false;
+          const inputDate = new Date(value);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          return inputDate > today;
+        },
+        defaultMessage(args: ValidationArguments) {
+          return 'Event date must be in the future';
+        },
+      },
+    });
+  };
+}
 
 export class CreateRequestDto {
   @IsMongoId()
@@ -11,6 +35,7 @@ export class CreateRequestDto {
 
   @IsDateString()
   @IsNotEmpty()
+  @IsDateInFuture()
   date: string;
 
   @IsString()

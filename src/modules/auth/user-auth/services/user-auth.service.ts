@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { HttpException, Inject, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import type { IUserAuthService } from '../interfaces/user-auth.service.interface';
 // import { IUserAuthServiceToken } from './interfaces/user-auth.service.interface';
 import { Response } from 'express';
@@ -14,6 +14,7 @@ import { MailService } from 'src/mail/mail.service';
 import { SignupDto, SignupResponse, VerificationResponse, VerifyOtpResponse } from '../dto/user-auth.dto';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
+import { HttpStatus } from 'src/common/enums/http-status.enum';
 
 @Injectable()
 export class UserAuthService implements IUserAuthService {
@@ -267,11 +268,14 @@ export class UserAuthService implements IUserAuthService {
     }
     async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
             const user = await this._userService.findByEmail(email);
+            console.log("user in forgot password in user-auth.service.ts : ",user)
             if (!user) {
                 // To prevent email enumeration, we don't reveal that the user doesn't exist.
                 // We'll return a success-like message but do nothing.
                 this._logger.warn(`Password reset attempt for non-existent email: ${email}`);
-                return { success: true, message: 'If an account with this email exists, a password reset link has been sent.' };
+                return { success: false, message: `Password reset attempt for non-existent email: ${email} has failed`,
+                    // 'If an account with this email exists, a password reset link has been sent.' 
+                };
             }
     
             // 1. Generate a secure token
