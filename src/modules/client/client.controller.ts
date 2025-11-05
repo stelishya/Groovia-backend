@@ -23,12 +23,12 @@ export class ClientController {
     ) { }
 
     @UseGuards(JwtAuthGuard)
-@Get('profile')
-@HttpCode(HttpStatus.OK)
-async getProfile(@Req() req: AuthRequest) {
-  // req.user contains { userId, email, role, ... }
-  return this._clientService.getProfileByUserId(req.user.userId);
-}
+    @Get('profile')
+    @HttpCode(HttpStatus.OK)
+    async getProfile(@Req() req: AuthRequest) {
+        // req.user contains { userId, email, role, ... }
+        return this._clientService.getProfileByUserId(req.user.userId);
+    }
     // @Public()
     @Get()
     @HttpCode(HttpStatus.OK)
@@ -42,9 +42,9 @@ async getProfile(@Req() req: AuthRequest) {
         // @Query('role') role?: string,
         // @Query('availableForPrograms') availableForPrograms?: boolean
     ) {
-         const pageNumber = parseInt(page, 10) || 1;
- const limit = 1; 
-        const { dancers, total } = await this._clientService.getAllDancers({ location, sortBy, page:pageNumber, limit, danceStyle, search});
+        const pageNumber = parseInt(page, 10) || 1;
+        const limit = 6;
+        const { dancers, total } = await this._clientService.getAllDancers({ location, sortBy, page: pageNumber, limit, danceStyle, search });
         // return {message:'Dancers retrieved successfully', dancers, total, page, limit };
         return ApiResponse.success({ message: MESSAGES.DANCERS_RETRIEVED_SUCCESSFULLY, dancers, total, page, limit });
         // return ApiResponse.success({ message: MESSAGES.DANCERS_RETRIEVED_SUCCESSFULLY, data: { dancers, total, page: pageNumber, limit } });
