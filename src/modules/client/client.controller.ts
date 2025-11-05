@@ -68,7 +68,7 @@ async getProfile(@Req() req: AuthRequest) {
     async getEventRequests(
         @ActiveUser('userId') clientId: string,
         @Query('page') page: number = 1,
-        @Query('limit') limit: number = 1,
+        @Query('limit') limit: number = 6,
         @Query('search') search?: string,
         @Query('status') status?: string,
         @Query('sortBy') sortBy?: string,

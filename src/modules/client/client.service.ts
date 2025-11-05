@@ -92,7 +92,7 @@ export class ClientService {
 
         const requests = await this._eventModel
             .find(query)
-            .populate('dancerId', 'username profileImage')
+            .populate('dancerId', 'username profileImage danceStyles')
             .sort(sortOptions)
             .skip((page - 1) * limit)
             .limit(limit)

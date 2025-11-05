@@ -49,7 +49,7 @@ import { HttpStatus } from 'src/common/enums/http-status.enum';
     }
   
     @Public()
-    @Post('google')
+    @Post('common/google')
     async authGoogle(@Body() body: { credential: string; role: 'client'|'dancer'  }, @Res() res: Response) {
       if (!body.credential) {
         throw new BadRequestException('No credential provided');
