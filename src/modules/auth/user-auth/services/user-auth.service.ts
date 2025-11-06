@@ -167,6 +167,7 @@ export class UserAuthService implements IUserAuthService {
             // const user = await this._userService.createUser({username,email,role,password})
 
             const newOtp = await this._otpService.createOtp(email)
+            console.log("new otp :",newOtp)
             await this._mailService.sendOtpEmail(email, { otp: newOtp })
 
             return {
