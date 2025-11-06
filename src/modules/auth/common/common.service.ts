@@ -72,7 +72,7 @@ export class CommonService implements ICommonService{
     credential: string,
     res: Response,
     role: 'client'|'dancer'
-  ): Promise<{ accessToken: string; message: string }> {
+  ): Promise<{success:boolean, accessToken: string; message: string }> {
     try {
       const ticket = await this._googleClient.verifyIdToken({
         idToken: credential,
@@ -100,20 +100,42 @@ export class CommonService implements ICommonService{
       const language = this._convertToLanguageEnum(locale);
 
       let user: User | null = await this._userService.findByEmail(email);
+      
       if (!user) {
+        // new user -create account with selected role
+        // sanitizedUsername -remove spaces and special chars, keep only alphanumeric and underscores
+        let sanitizedUsername = fullname
+          ?.replace(/[^a-zA-Z0-9_]/g, '_')
+          .replace(/_+/g, '_')
+          .replace(/^_|_$/g, '')
+          .toLowerCase() || 'user';
+        
+        // ensure username is unique by appending part of googleId if needed
+        const existingUser = await this._userService.findByUsername(sanitizedUsername);
+        if (existingUser) {
+          sanitizedUsername = `${sanitizedUsername}_${googleId.substring(0, 6)}`;
+        }
+
         user = await this._userService.createGoogleUser({
           email,
-          username:fullname,
+          username: sanitizedUsername,
           googleId,
           language,
           profileImage,
-          role: [role ?? 'dancer'],   // default role
-          // isGoogleUser: true,
+          role: [role ?? 'dancer'],   // Set role only for new users
         });
-      }
-
-      if (user && !user.googleId) {
-        user = await this._userService.updateUserGoogleId(user._id, googleId);
+      } else {
+        // existing user - check if blocked
+        if (user.isBlocked) {
+          return {success:false,accessToken:'',message:'Your account has been blocked. Please contact support.'}
+          // throw new BadRequestException('Your account has been blocked. Please contact support.');
+        }
+        
+        // if existing user doesn't have googleId, link it
+        if (!user.googleId) {
+          user = await this._userService.updateUserGoogleId(user._id, googleId);
+        }
+        // don't update the role for existing users
       }
       if (user) {
         const { accessToken, refreshToken } = await this.generateToken(
@@ -124,6 +146,7 @@ export class CommonService implements ICommonService{
         this.setRefreshTokenCookie(res, refreshToken);
 
         return {
+          success:true,
           accessToken,
           message: 'Google sign-in successful',
         };

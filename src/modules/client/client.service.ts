@@ -4,7 +4,7 @@ import { User } from '../users/models/user.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Events } from './models/events.schema';
 import { Model } from 'mongoose';
-import { CreateRequestDto, updateBookingStatusDto } from './dto/client.dto';
+import { CreateRequestDto, updateBookingStatusDto, UpdateClientProfileDto } from './dto/client.dto';
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Injectable()
@@ -50,7 +50,9 @@ export class ClientService {
         }
         const sortOptions: any = {};
         if (sortBy === 'likes') {
-            sortOptions.likes = -1; // descending order
+            sortOptions.likes = -1; // descending order (most likes first)
+        } else if (sortBy === 'name') {
+            sortOptions.username = 1; // ascending order (A-Z)
         }
         const dancers = await this.userService.find(query, {
             sort: sortOptions,
@@ -115,5 +117,46 @@ export class ClientService {
         }
 
         return event;
+    }
+
+    async updateClientProfile(userId: string, updateData: UpdateClientProfileDto): Promise<User> {
+        const user = await this.userService.findById(userId);
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        // Check if username is being changed and if it's already taken
+        if (updateData.username && updateData.username !== user.username) {
+            const existingUser = await this.userService.findByUsername(updateData.username);
+            if (existingUser) {
+                throw new NotFoundException('Username already taken');
+            }
+        }
+
+        // Check if email is being changed and if it's already taken
+        if (updateData.email && updateData.email !== user.email) {
+            const existingUser = await this.userService.findByEmail(updateData.email);
+            if (existingUser) {
+                throw new NotFoundException('Email already in use');
+            }
+        }
+
+        // Update only provided fields
+        const updatedUser = await this.userService.updateOne(
+            { _id: user._id },
+            { $set: updateData }
+        );
+
+        if (!updatedUser) {
+            throw new NotFoundException('Failed to update profile');
+        }
+
+        console.log('Updated user in service:', updatedUser);
+
+        // Remove password from response
+        const userObject = (updatedUser as any).toJSON ? (updatedUser as any).toJSON() : updatedUser;
+        const { password, ...userWithoutPassword } = userObject as any;
+
+        return userWithoutPassword as User;
     }
 }

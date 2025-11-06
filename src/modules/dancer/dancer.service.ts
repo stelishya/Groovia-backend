@@ -35,7 +35,7 @@ export class DancerService {
         // Convert to plain object and remove sensitive data
         const userObject = (updatedUser as any).toJSON ? (updatedUser as any).toJSON() : updatedUser;
         const { password, ...userDetails } = userObject as any;
-        console.log("userDetails in dancer.service.ts",userDetails)
+        console.log("userDetails in dancer.service.ts", userDetails)
         return userDetails;
     }
 
@@ -77,7 +77,10 @@ export class DancerService {
         if (!dancer) {
             throw new NotFoundException('Dancer not found');
         }
-
+        // Initialize likes array if it doesn't exist
+        if (!dancer.likes || !Array.isArray(dancer.likes)) {
+            dancer.likes = [];
+        }
         const userObjectId = new Types.ObjectId(userId);
         const likes = dancer.likes.map(id => id.toString());
         const userIndex = likes.indexOf(userId);

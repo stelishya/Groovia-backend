@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsMongoId, IsDateString, registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
+import { IsString, IsNotEmpty, IsMongoId, IsDateString, registerDecorator, ValidationOptions, ValidationArguments, IsOptional, IsEmail } from 'class-validator';
 
 // Custom validator to check if date is in the future
 function IsDateInFuture(validationOptions?: ValidationOptions) {
@@ -51,4 +51,22 @@ export class updateBookingStatusDto{
   @IsString()
   @IsNotEmpty()
   status: string;
+}
+
+export class UpdateClientProfileDto {
+  @IsString()
+  @IsOptional()
+  username?: string;
+
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
+  @IsString()
+  @IsOptional()
+  bio?: string;
 }

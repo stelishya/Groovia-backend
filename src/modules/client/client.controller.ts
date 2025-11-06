@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { Public } from 'src/common/decorators/public.decorator';
-import { CreateRequestDto, updateBookingStatusDto } from './dto/client.dto';
+import { CreateRequestDto, updateBookingStatusDto, UpdateClientProfileDto } from './dto/client.dto';
 import { ClientService } from './client.service';
 import { ActiveUser } from 'src/common/decorators/active-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwtAuth.guard';
@@ -28,6 +28,19 @@ export class ClientController {
     async getProfile(@Req() req: AuthRequest) {
         // req.user contains { userId, email, role, ... }
         return this._clientService.getProfileByUserId(req.user.userId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Patch('profile')
+    @HttpCode(HttpStatus.OK)
+    async updateProfile(
+        @ActiveUser('userId') userId: string,
+        @Body() updateData: UpdateClientProfileDto,
+    ) {
+        const updatedUser = await this._clientService.updateClientProfile(userId, updateData);
+        console.log("updatedUser",updatedUser)
+        console.log("sending response to frontend")
+        return ApiResponse.success({ message: MESSAGES.PROFILE_UPDATED_SUCCESSFULLY, user: updatedUser });
     }
     // @Public()
     @Get()
