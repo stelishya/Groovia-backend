@@ -1,4 +1,4 @@
-import { ConsoleLogger, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConsoleLogger, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Model, Types } from 'mongoose';
 import { UpdateDancerProfileDto } from './dto/dancer.dto';
 import { type IUserService, IUserServiceToken } from '../users/interfaces/services/user.service.interface';
@@ -24,6 +24,21 @@ export class DancerService {
 
     async updateProfile(userId: Types.ObjectId, updateData: UpdateDancerProfileDto) {
         console.log("updateProfile in dancer.service.ts")
+        
+        if(updateData.username){
+            const existingUsername = await this.userService.findByUsername(updateData.username);
+            if (existingUsername && existingUsername._id.toString() !== userId.toString()) {
+                throw new BadRequestException('Username already exists');
+            }
+        }
+        // Check if email is being updated and if it already exists
+        if (updateData.email) {
+            const existingUserWithEmail = await this.userService.findByEmail(updateData.email);
+            if (existingUserWithEmail && existingUserWithEmail._id.toString() !== userId.toString()) {
+                throw new BadRequestException('Email already exists');
+            }
+        }
+        
         // Update user in database
         const updatedUser = await this.userService.updateOne(
             { _id: userId },
