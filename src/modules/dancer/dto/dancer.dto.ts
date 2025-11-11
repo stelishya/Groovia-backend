@@ -48,6 +48,11 @@ export class UpdateDancerProfileDto {
   @IsBoolean()
   @IsOptional()
   availableForPrograms?: boolean;
+
+  @ApiPropertyOptional({ example: "https://s3.amazonaws.com/bucket/profile.jpg" })
+  @IsString()
+  @IsOptional()
+  profileImage?: string;
 }
 
 export class CreateReviewDto {

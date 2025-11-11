@@ -1,3 +1,4 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsMongoId, IsDateString, registerDecorator, ValidationOptions, ValidationArguments, IsOptional, IsEmail } from 'class-validator';
 
 // Custom validator to check if date is in the future
@@ -58,14 +59,22 @@ export class UpdateClientProfileDto {
   @IsOptional()
   username?: string;
 
+  @ApiPropertyOptional({ example: 'john@example.com' })
   @IsEmail()
   @IsOptional()
   email?: string;
 
+  @ApiPropertyOptional({example:"1234567890"})
   @IsString()
   @IsOptional()
   phone?: string;
 
+  @ApiPropertyOptional({ example: "https://s3.amazonaws.com/bucket/profile.jpg" })
+  @IsString()
+  @IsOptional()
+  profileImage?: string;
+
+  @ApiPropertyOptional({ example: 'Dance enthusiast' })
   @IsString()
   @IsOptional()
   bio?: string;

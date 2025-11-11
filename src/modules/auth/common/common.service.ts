@@ -9,6 +9,7 @@ import { type IUserService, IUserServiceToken } from 'src/modules/users/interfac
 import { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { RedisService } from 'src/common/redis/redis.service';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
+import { Role } from 'src/common/enums/role.enum';
 
 @Injectable()
 export class CommonService implements ICommonService{
@@ -71,7 +72,7 @@ export class CommonService implements ICommonService{
   async handleGoogleAuth(
     credential: string,
     res: Response,
-    role: 'client'|'dancer'
+    role: Role.CLIENT | Role.DANCER
   ): Promise<{success:boolean, accessToken: string; message: string }> {
     try {
       const ticket = await this._googleClient.verifyIdToken({
@@ -122,7 +123,7 @@ export class CommonService implements ICommonService{
           googleId,
           language,
           profileImage,
-          role: [role ?? 'dancer'],   // Set role only for new users
+          role: [role ?? Role.DANCER],   // Set role only for new users
         });
       } else {
         // existing user - check if blocked

@@ -7,7 +7,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 // import { AuthController } from './modules/auth/auth.controller';
 // import { AuthService } from './modules/auth/auth.service';
 import { AuthModule } from './modules/auth/auth.module';
-import { MailModule } from './mail/mail.module';
+import { MailModule } from './modules/mail/mail.module';
 // import { CommonService } from './auth/common/common.service';
 // import { Service } from './auth/common/modules/.service';
 import { UsersModule } from './modules/users/users.module';
@@ -17,6 +17,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ClientModule } from './modules/client/client.module';
 import { DancerModule } from './modules/dancer/dancer.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
+import { StorageModule } from './common/storage/storage.module';
 
 @Module({
   imports: [
@@ -60,7 +61,8 @@ import { BookingsModule } from './modules/bookings/bookings.module';
     NotificationsModule,
     ClientModule,
     DancerModule,
-    BookingsModule
+    BookingsModule,
+    StorageModule
   ],
   providers: [AppService],
   controllers: [AppController],

@@ -6,6 +6,7 @@ import { User } from '../models/user.schema';
 import { IUpgradeRequestService } from '../interfaces/upgrade-request.service.interface';
 import { NotificationService } from 'src/modules/notifications/services/notification.service';
 import { NotificationType } from 'src/modules/notifications/models/notification.schema';
+import { Role } from 'src/common/enums/role.enum';
 
 @Injectable()
 export class UpgradeRequestService implements IUpgradeRequestService {
@@ -24,7 +25,7 @@ export class UpgradeRequestService implements IUpgradeRequestService {
         }
 
         // Check if user already has instructor role
-        if (user.role.includes('instructor')) {
+        if (user.role.includes(Role.INSTRUCTOR)) {
             throw new BadRequestException('User already has instructor role');
         }
 
@@ -75,7 +76,7 @@ export class UpgradeRequestService implements IUpgradeRequestService {
         // Update user role
         await this.userModel.findByIdAndUpdate(
             request.userId,
-            { $addToSet: { role: 'instructor' } }
+            { $addToSet: { role: Role.INSTRUCTOR } }
         );
 
         // Update request status

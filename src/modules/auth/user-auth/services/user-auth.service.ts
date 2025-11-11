@@ -10,7 +10,7 @@ import { IHashingServiceToken } from 'src/common/hashing/interfaces/hashing.serv
 import type { ICommonService } from '../../common/interfaces/common-service.interface';
 import { ICommonServiceToken } from '../../common/interfaces/common-service.interface';
 import { type IOtpService, IOtpServiceToken } from '../interfaces/otp.service.interface';
-import { MailService } from 'src/mail/mail.service';
+import { MailService } from 'src/modules/mail/mail.service';
 import { SignupDto, SignupResponse, VerificationResponse, VerifyOtpResponse } from '../dto/user-auth.dto';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';

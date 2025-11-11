@@ -1,6 +1,6 @@
 import { Controller, Get, Param, Patch  } from '@nestjs/common';
 import { MESSAGES } from 'src/common/constants/constants';
-import { ApiResponse } from 'src/common/models/commonResponse.model';
+import { ApiResponse } from 'src/common/models/common-response.model';
 import { NotificationService } from '../services/notification.service';
 
 @Controller('notifications')

@@ -7,7 +7,7 @@ import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SuccessResponseDto } from '../users/dto/user.dto';
 import { Role } from 'src/common/enums/role.enum';
 import { Types } from 'mongoose';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
 
 @Controller('admins')

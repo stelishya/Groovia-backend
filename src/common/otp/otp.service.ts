@@ -1,6 +1,6 @@
 import { HttpException, Inject, Injectable, Logger } from '@nestjs/common';
-import { IOtpService } from '../../user-auth/interfaces/otp.service.interface';
-import { type IOtpRepository, IOtpRepositoryToken } from '../../user-auth/interfaces/otp.repo.interface';
+import { IOtpService } from '../../modules/auth/user-auth/interfaces/otp.service.interface';
+import { type IOtpRepository, IOtpRepositoryToken } from '../../modules/auth/user-auth/interfaces/otp.repo.interface';
 import * as otpGenerator from 'otp-generator'
 import { HttpStatus } from 'src/common/enums/http-status.enum';
 

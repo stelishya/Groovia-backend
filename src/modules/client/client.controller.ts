@@ -1,12 +1,15 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Query, Req, UseGuards, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Public } from 'src/common/decorators/public.decorator';
 import { CreateRequestDto, updateBookingStatusDto, UpdateClientProfileDto } from './dto/client.dto';
 import { ClientService } from './client.service';
 import { ActiveUser } from 'src/common/decorators/active-user.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwtAuth.guard';
 import { MESSAGES } from 'src/common/constants/constants';
-import { ApiResponse } from 'src/common/models/commonResponse.model';
+import { ApiResponse } from 'src/common/models/common-response.model';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
+import { AwsS3Service } from 'src/common/storage/aws-s3.service';
+import { Types } from 'mongoose';
 
 interface AuthRequest extends Request {
     user: {
@@ -20,6 +23,7 @@ interface AuthRequest extends Request {
 export class ClientController {
     constructor(
         private readonly _clientService: ClientService,
+        private readonly s3Service: AwsS3Service
     ) { }
 
     @UseGuards(JwtAuthGuard)
@@ -28,6 +32,53 @@ export class ClientController {
     async getProfile(@Req() req: AuthRequest) {
         // req.user contains { userId, email, role, ... }
         return this._clientService.getProfileByUserId(req.user.userId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('profile/upload-picture')
+    @HttpCode(HttpStatus.OK)
+    @UseInterceptors(FileInterceptor('profileImage', {
+        fileFilter: (req, file, cb) => {
+            if (file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+                cb(null, true);
+            } else {
+                cb(new BadRequestException('Only image files are allowed!'), false);
+            }
+        },
+        limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+    }))
+    async uploadProfilePicture(
+        @ActiveUser('userId') userId: string,
+        @UploadedFile() file: Express.Multer.File
+    ) {
+        if (!file) {
+            throw new BadRequestException('No file uploaded');
+        }
+
+        const userObjectId = new Types.ObjectId(userId);
+        const fileName = `profiles/${userObjectId}-${Date.now()}-${file.originalname}`;
+
+        try {
+            // Upload to S3
+            const result = await this.s3Service.uploadBuffer(
+                file.buffer,
+                fileName,
+                file.mimetype
+            );
+
+            // Update user profile with new image URL
+            const updatedUser = await this._clientService.updateClientProfile(userId, {
+                profileImage: result.Location
+            });
+
+            return ApiResponse.success({ 
+                message: 'Profile picture uploaded successfully', 
+                user: updatedUser,
+                imageUrl: result.Location 
+            });
+        } catch (error) {
+            throw new BadRequestException('Failed to upload profile picture');
+        }
     }
 
     @UseGuards(JwtAuthGuard)

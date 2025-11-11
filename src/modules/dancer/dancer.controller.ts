@@ -10,7 +10,10 @@ import {
     // HttpStatus,
     UseGuards,
     Inject,
-    Query
+    Query,
+    BadRequestException,
+    UploadedFile,
+    UseInterceptors
 } from '@nestjs/common';
 import { Request } from 'express';
 import { Types } from 'mongoose';
@@ -22,8 +25,10 @@ import { IUserServiceToken, type IUserService } from '../users/interfaces/servic
 import { JwtAuthGuard } from '../auth/guards/jwtAuth.guard';
 import { ActiveUser } from 'src/common/decorators/active-user.decorator';
 import { MESSAGES } from 'src/common/constants/constants';
-import { ApiResponse } from 'src/common/models/commonResponse.model';
+import { ApiResponse } from 'src/common/models/common-response.model';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { AwsS3Service } from 'src/common/storage/aws-s3.service';
 
 
 interface AuthRequest extends Request {
@@ -38,19 +43,67 @@ export class DancerController {
     constructor(
         private readonly dancerService: DancerService,
         @Inject(IUserServiceToken)
-        private readonly userService: IUserService
-    ) { 
+        private readonly userService: IUserService,
+        private readonly s3Service: AwsS3Service
+    ) {
 
         console.log("DancerController initialized");
     }
 
     @UseGuards(JwtAuthGuard)
-@Get('profile')
-@HttpCode(HttpStatus.OK)
-async getProfile(@Req() req: AuthRequest) {
-  // req.user contains { userId, email, role, ... }
-  return this.dancerService.getProfileByUserId(req.user.userId);
-}
+    @Get('profile')
+    @HttpCode(HttpStatus.OK)
+    async getProfile(@Req() req: AuthRequest) {
+        // req.user contains { userId, email, role, ... }
+        return this.dancerService.getProfileByUserId(req.user.userId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('profile/upload-picture')
+    @HttpCode(HttpStatus.OK)
+    @UseInterceptors(FileInterceptor('profileImage', {
+        fileFilter: (req, file, cb) => {
+            if (file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+                cb(null, true);
+            } else {
+                cb(new BadRequestException('Only image files are allowed!'), false);
+            }
+        },
+        limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+    }))
+    async uploadProfilePicture(
+        @Req() req: AuthRequest,
+        @UploadedFile() file: Express.Multer.File
+    ) {
+        if (!file) {
+            throw new BadRequestException('No file uploaded');
+        }
+
+        const userId = new Types.ObjectId(req.user.userId);
+        const fileName = `profiles/${userId}-${Date.now()}-${file.originalname}`;
+
+        try {
+            // Upload to S3
+            const result = await this.s3Service.uploadBuffer(
+                file.buffer,
+                fileName,
+                file.mimetype
+            );
+
+            // Update user profile with new image URL
+            const userDetails = await this.dancerService.updateProfile(userId, {
+                profileImage: result.Location
+            });
+
+            return ApiResponse.success({
+                message: 'Profile picture uploaded successfully',
+                user: userDetails,
+                imageUrl: result.Location
+            });
+        } catch (error) {
+            throw new BadRequestException('Failed to upload profile picture');
+        }
+    }
 
     @UseGuards(JwtAuthGuard)
     @Patch('profile')
@@ -59,9 +112,9 @@ async getProfile(@Req() req: AuthRequest) {
         @Req() req: AuthRequest,
         @Body() updateData: UpdateDancerProfileDto
     ) {
-        console.log("updateProfile in dancer.controller.ts: ",req)
+        console.log("updateProfile in dancer.controller.ts: ", req)
         const userId = new Types.ObjectId(req.user.userId);
-        console.log("userId in dancer.controller.ts",userId)
+        console.log("userId in dancer.controller.ts", userId)
         // const updatedUser = await this.userService.updateOne(
         //     { _id: userId },
         //     { $set: updateData }
@@ -69,9 +122,9 @@ async getProfile(@Req() req: AuthRequest) {
         // if (!updatedUser) {
         //     throw new Error('Failed to update profile'); 
         // }
-        
+
         // const { password, ...userDetails } = updatedUser.toObject();
-         const userDetails = await this.dancerService.updateProfile(userId, updateData);
+        const userDetails = await this.dancerService.updateProfile(userId, updateData);
         return ApiResponse.success({ message: MESSAGES.PROFILE_UPDATED_SUCCESSFULLY, user: userDetails });
     }
 
