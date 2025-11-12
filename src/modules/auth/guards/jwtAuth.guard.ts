@@ -46,6 +46,21 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       });
     }
     console.log("token not expired")
+
+    // Blocked user propagated from strategy
+    if (err && typeof err.message === 'string' && err.message.toLowerCase().includes('blocked')) {
+      const res = context.switchToHttp().getResponse<Response>();
+      res.setHeader(
+        'WWW-Authenticate',
+        'Bearer error="invalid_token", error_description="user account is blocked"',
+      );
+      throw new UnauthorizedException({
+        statusCode: 401,
+        message: 'User account is blocked',
+        isUserBlocked: true,
+      });
+    }
+
     if (err || !user) {
       const res = context.switchToHttp().getResponse<Response>();
       res.setHeader(

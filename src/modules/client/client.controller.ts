@@ -100,18 +100,13 @@ export class ClientController {
         @Query('location') location?: string,
         @Query('sortBy') sortBy?: string,
         @Query('page') page: any = 1,
-        // @Query('limit') limit: number = 1,
         @Query('danceStyle') danceStyle?: string,
         @Query('search') search?: string,
-        // @Query('role') role?: string,
-        // @Query('availableForPrograms') availableForPrograms?: boolean
     ) {
         const pageNumber = parseInt(page, 10) || 1;
         const limit = 6;
         const { dancers, total } = await this._clientService.getAllDancers({ location, sortBy, page: pageNumber, limit, danceStyle, search });
-        // return {message:'Dancers retrieved successfully', dancers, total, page, limit };
         return ApiResponse.success({ message: MESSAGES.DANCERS_RETRIEVED_SUCCESSFULLY, dancers, total, page, limit });
-        // return ApiResponse.success({ message: MESSAGES.DANCERS_RETRIEVED_SUCCESSFULLY, data: { dancers, total, page: pageNumber, limit } });
     }
 
     @UseGuards(JwtAuthGuard)
@@ -138,7 +133,6 @@ export class ClientController {
         @Query('sortBy') sortBy?: string,
     ) {
         const { requests, total } = await this._clientService.getEventRequests(clientId, { page, limit, search, status, sortBy });
-        // return { message: 'Event requests retrieved successfully', requests, total, page, limit };
         return ApiResponse.success({ message: MESSAGES.EVENT_REQUESTS_RETRIEVED_SUCCESSFULLY, requests, total, page, limit });
     }
 
@@ -150,7 +144,6 @@ export class ClientController {
         @Body() statusDto: updateBookingStatusDto,
     ) {
         const updatedRequest = await this._clientService.updateEventRequestStatus(eventId, statusDto);
-        // return { message: 'Booking status updated successfully', request: updatedRequest };
         return ApiResponse.success({ message: MESSAGES.BOOKING_STATUS_UPDATED_SUCCESSFULLY, request: updatedRequest });
     }
 }

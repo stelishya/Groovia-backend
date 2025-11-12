@@ -40,10 +40,6 @@ import { User, userSchema } from 'src/modules/users/models/user.schema';
             provide:IUserRepositoryToken,
             useClass:UserRepository
         },
-        // {
-        //     provide:User,
-        //     useClass:User
-        // },
         {
             provide: IBaseRepositoryToken,
             useClass: BaseRepository,

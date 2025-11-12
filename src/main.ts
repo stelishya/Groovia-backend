@@ -8,7 +8,7 @@ async function bootstrap() {
   app.use(cookieParser());
    app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.enableCors({
-    origin: 'http://localhost:5500',
+    origin: process.env.FRONTEND_URL || 'http://localhost:5500',
     credentials: true,
     methods: ['GET','HEAD','PUT','PATCH','POST','DELETE','OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],

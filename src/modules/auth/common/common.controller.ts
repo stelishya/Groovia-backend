@@ -16,12 +16,6 @@ import {
   import { Logger } from '@nestjs/common';
   import type{ Response, Request } from 'express';
   import { Types } from 'mongoose';
-  
-//   import { GetUser } from '../decorators/get-user.decorator';
-//   import { Public } from '../decorators/public.decorator';
-  
-//   import { UserType } from './dtos/common.dto';
-
   import {
     type ICommonService,
     ICommonServiceToken,
