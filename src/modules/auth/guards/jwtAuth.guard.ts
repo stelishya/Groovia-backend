@@ -32,7 +32,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const errorName = getErrorName(info);
 
     if (errorName === 'TokenExpiredError') {
-      console.log("TokenExpiredError")
+      console.log("Token Expired Error")
       const res = context.switchToHttp().getResponse<Response>();
       console.log("res in handleRequest in jwtAuth.guard.ts: ",res)
       res.setHeader(

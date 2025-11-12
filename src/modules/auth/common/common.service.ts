@@ -196,4 +196,46 @@ export class CommonService implements ICommonService{
       this._logger.error(`Failed to blacklist token: ${error.message}`);
     }
   }
+
+  async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+    try {
+      // Check if token is blacklisted
+      const isBlacklisted = await this._redisService.client.get(`blacklist:${refreshToken}`);
+      if (isBlacklisted) {
+        throw new BadRequestException('Refresh token has been revoked');
+      }
+
+      // Verify the refresh token
+      const payload = await this._jwtService.verifyAsync(refreshToken, {
+        secret: this._configService.get<string>('JWT_SECRET'),
+      });
+
+      // Get user from database to ensure they still exist and aren't blocked
+      const user = await this._userService.findById(payload.userId);
+      if (!user) {
+        throw new BadRequestException('User not found');
+      }
+
+      if (user.isBlocked) {
+        throw new BadRequestException('User account is blocked');
+      }
+
+      // Generate new tokens
+      const tokens = await this.generateToken(user);
+
+      // Optionally blacklist the old refresh token to prevent reuse
+      await this._blacklistToken(refreshToken);
+
+      return tokens;
+    } catch (error) {
+      this._logger.error(`Token refresh failed: ${error.message}`);
+      if (error.name === 'TokenExpiredError') {
+        throw new BadRequestException('Refresh token has expired');
+      }
+      if (error.name === 'JsonWebTokenError') {
+        throw new BadRequestException('Invalid refresh token');
+      }
+      throw error;
+    }
+  }
 }

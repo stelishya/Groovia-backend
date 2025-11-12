@@ -16,17 +16,20 @@ export class TokenService {
   ) {}
 
   async signAccessToken(payload: TokenPayload): Promise<string> {
+    console.log("signAccessToken in token.service.ts !!")
     const options = this._getJwtOptions('ACCESS_TOKEN_EXPIRATION');
     return this._jwtService.signAsync(payload, options);
   }
 
   async signRefreshToken(payload: TokenPayload): Promise<string> {
+    console.log("signRefreshToken in token.service.ts !!")
     const options = this._getJwtOptions('REFRESH_TOKEN_EXPIRATION');
     return this._jwtService.signAsync(payload, options);
   }
 
   // Currently not using; passport handles this.
   async verifyRefreshToken(refreshToken: string): Promise<TokenPayload> {
+    console.log("verifyRefreshToken in token.service.ts !!")
     return this._jwtService.verifyAsync(refreshToken, {
       secret: this._configService.get<string>('JWT_SECRET'),
     });

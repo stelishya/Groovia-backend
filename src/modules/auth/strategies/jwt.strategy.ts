@@ -7,7 +7,7 @@ import { TokenPayload } from '../services/token.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
-   private readonly logger = new Logger(JwtStrategy.name);
+  private readonly logger = new Logger(JwtStrategy.name);
   constructor(private readonly configService: ConfigService) {
     console.log("JWT_SECRET used in strategy: ", configService.get<string>('JWT_SECRET'));
     super({
@@ -17,11 +17,11 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
     const secret = configService.get<string>('JWT_SECRET');
     console.log("JWT_SECRET used in strategy: ", secret);
-this.logger.debug(`JWT_SECRET used in strategy: ${secret}`);
+    this.logger.debug(`JWT_SECRET used in strategy: ${secret}`);
   }
 
   validate(payload: TokenPayload): TokenPayload {
-    console.log("payload in jwt-strategy: ", payload);
+    console.log("payload in validate in jwt-strategy: ", payload);
     return {
       userId: payload.userId,
       email: payload.email,

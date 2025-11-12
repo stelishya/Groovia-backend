@@ -29,13 +29,11 @@ export class AwsS3Service {
    * Upload a file from local filesystem to S3
    * @param filePath - Local file path
    * @param fileName - S3 key/filename (e.g., 'uploads/profile.jpg')
-   * @param acl - Access control (default: 'public-read')
    * @returns Promise with upload result
    */
   async uploadFile(
     filePath: string,
     fileName: string,
-    acl: string = 'public-read',
   ): Promise<AWS.S3.ManagedUpload.SendData> {
     try {
       const fileContent = fs.readFileSync(filePath);
@@ -43,10 +41,11 @@ export class AwsS3Service {
         Bucket: this.bucketName,
         Key: fileName,
         Body: fileContent,
-        ACL: acl,
+        // ACL removed - bucket uses bucket policy for public access
       };
 
       const result = await this.s3.upload(params).promise();
+      console.log("result in uploadFile in aws-s3.service.ts : ",result)
       this.logger.log(`File uploaded successfully at: ${result.Location}`);
       return result;
     } catch (error) {
@@ -60,14 +59,12 @@ export class AwsS3Service {
    * @param buffer - File buffer
    * @param fileName - S3 key/filename
    * @param mimetype - File mimetype
-   * @param acl - Access control (default: 'public-read')
    * @returns Promise with upload result
    */
   async uploadBuffer(
     buffer: Buffer,
     fileName: string,
     mimetype: string,
-    acl: string = 'public-read',
   ): Promise<AWS.S3.ManagedUpload.SendData> {
     try {
       const params: AWS.S3.PutObjectRequest = {
@@ -75,7 +72,7 @@ export class AwsS3Service {
         Key: fileName,
         Body: buffer,
         ContentType: mimetype,
-        ACL: acl,
+        // ACL removed - bucket uses bucket policy for public access
       };
 
       const result = await this.s3.upload(params).promise();

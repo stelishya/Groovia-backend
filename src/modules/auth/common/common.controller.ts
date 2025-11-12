@@ -62,4 +62,40 @@ import { HttpStatus } from 'src/common/enums/http-status.enum';
         return res.status(HttpStatus.OK).json(resp);
       }
     }
+
+    @Public()
+    @Post('refresh-token')
+    async refreshToken(
+      @Req() req: Request,
+      @Res() res: Response,
+    ) {
+      this._logger.log('Refresh token endpoint called');
+      
+      const refreshToken = req.cookies['refreshToken'];
+      
+      if (!refreshToken) {
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+          message: 'Refresh token not found',
+          isRefreshTokenExpired: true,
+        });
+      }
+
+      try {
+        const result = await this._commonService.refreshAccessToken(refreshToken);
+        
+        // Set new refresh token cookie
+        this._commonService.setRefreshTokenCookie(res, result.refreshToken);
+        
+        return res.status(HttpStatus.OK).json({
+          accessToken: result.accessToken,
+          message: 'Token refreshed successfully',
+        });
+      } catch (error) {
+        this._logger.error(`Token refresh failed: ${error.message}`);
+        return res.status(HttpStatus.UNAUTHORIZED).json({
+          message: error.message || 'Invalid refresh token',
+          isRefreshTokenExpired: true,
+        });
+      }
+    }
   }

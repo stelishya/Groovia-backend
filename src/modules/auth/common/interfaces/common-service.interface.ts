@@ -17,4 +17,5 @@ export interface ICommonService{
         res:Response,
         refreshToken:string,
     ):void;
+    refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }>;
 }
