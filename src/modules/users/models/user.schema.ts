@@ -25,7 +25,8 @@ export enum Language {
 export class User{
     _id:Types.ObjectId;
 
-    @Prop({required:true, unique:true, trim:true,match:/^[a-zA-Z0-9_]+$/})
+    @Prop({required:true, unique:true, trim:true})
+        // match:/^[a-zA-Z0-9_]+$/})
     username:string;
 
     @Prop({required:true, unique:true,match:/^\S+@\S+\.\S+$/})

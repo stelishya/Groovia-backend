@@ -11,7 +11,7 @@ export interface LoginDto{
 export interface SignupDto {
     username: string;
     email: string;
-    phone:string;
+    // phone:string;
     role: ('dancer' | 'client')[];
     password: string;
     confirmPassword: string;
@@ -28,7 +28,7 @@ export interface SignupResponse {
 export interface VerificationResponse {
     success: boolean;
     data: {
-        user: any; //  fix this in the next step
+        user: any;
     };
 }
 

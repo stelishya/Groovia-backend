@@ -6,6 +6,8 @@ export interface IUpgradeRequestService {
     createRequest(data: any): Promise<UpgradeRequest>;
     getAllRequests(): Promise<UpgradeRequest[]>;
     getPendingRequests(): Promise<UpgradeRequest[]>;
+    getRequestsByUser(userId: string): Promise<any[]>;
     approveRequest(id: string, adminNote?: string): Promise<UpgradeRequest>;
     rejectRequest(id: string, adminNote?: string): Promise<UpgradeRequest>;
+    confirmPayment(userId: string, upgradeRequestId: string, paymentId: string,amount:number, currency:string): Promise<{ success: boolean }>;
 }

@@ -6,19 +6,22 @@ import {
     Body, 
     Param,
     UseInterceptors,
-    UploadedFile,
+    UploadedFiles,
     Req,
     HttpCode,
     // HttpStatus,
-    Inject
+    Inject,
+    UseGuards
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { Request } from 'express';
 import {type IUpgradeRequestService, IUpgradeRequestServiceToken } from '../interfaces/upgrade-request.service.interface';
 import { Public } from 'src/common/decorators/public.decorator';
+import { ActiveUser } from 'src/common/decorators/active-user.decorator';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
+import { JwtAuthGuard } from 'src/modules/auth/guards/jwtAuth.guard';
 
 @Controller('users')
 export class UpgradeRequestController {
@@ -30,12 +33,19 @@ export class UpgradeRequestController {
     @Public()
     @Post('upgrade-role')
     @HttpCode(HttpStatus.CREATED)
-    @UseInterceptors(FileInterceptor('certificate', {
+    @UseInterceptors(FileFieldsInterceptor([
+        { name: 'certificate', maxCount: 1 },
+        { name: 'licenseDocument', maxCount: 1 }
+    ], {
         storage: diskStorage({
-            destination: './uploads/certificates',
+            destination: (req, file, cb) => {
+                const dir = file.fieldname === 'licenseDocument' ? './uploads/licenses' : './uploads/certificates';
+                cb(null, dir);
+            },
             filename: (req, file, cb) => {
                 const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-                cb(null, `certificate-${uniqueSuffix}${extname(file.originalname)}`);
+                const prefix = file.fieldname === 'licenseDocument' ? 'license' : 'certificate';
+                cb(null, `${prefix}-${uniqueSuffix}${extname(file.originalname)}`);
             }
         }),
         fileFilter: (req, file, cb) => {
@@ -49,14 +59,26 @@ export class UpgradeRequestController {
     }))
     async createUpgradeRequest(
         @Body() body: any,
-        @UploadedFile() file: Express.Multer.File
+        @UploadedFiles() files: { certificate?: Express.Multer.File[]; licenseDocument?: Express.Multer.File[] }
     ) {
-        const upgradeData = {
+        const certificateFile = files?.certificate?.[0];
+        const licenseFile = files?.licenseDocument?.[0];
+
+        const upgradeData: any = {
             ...body,
-            danceStyles: JSON.parse(body.danceStyles),
-            experienceYears: parseInt(body.experienceYears),
-            availableForWorkshops: body.availableForWorkshops === 'true',
-            certificateUrl: file ? `/uploads/certificates/${file.filename}` : undefined
+            // Instructor fields (optional)
+            danceStyles: body.danceStyles ? JSON.parse(body.danceStyles) : undefined,
+            experienceYears: body.experienceYears ? parseInt(body.experienceYears) : undefined,
+            availableForWorkshops: body.availableForWorkshops ? body.availableForWorkshops === 'true' : undefined,
+            preferredLocation: body.preferredLocation,
+            additionalMessage: body.additionalMessage || body.message,
+            certificateUrl: certificateFile ? `/uploads/certificates/${certificateFile.filename}` : undefined,
+            portfolioLinks: body.portfolioLinks,
+            // Organizer fields (optional)
+            organizationName: body.organizationName,
+            pastEventsCount: body.pastEventsCount ? parseInt(body.pastEventsCount) : (body.pastEvents ? parseInt(body.pastEvents) : undefined),
+            description: body.description,
+            licenseDocumentUrl: licenseFile ? `/uploads/licenses/${licenseFile.filename}` : undefined,
         };
 
         return await this.upgradeRequestService.createRequest(upgradeData);
@@ -65,6 +87,18 @@ export class UpgradeRequestController {
     @Get('upgrade-requests')
     async getAllUpgradeRequests() {
         return await this.upgradeRequestService.getAllRequests();
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Get('upgrade-status')
+    async getMyUpgradeStatus(
+        @ActiveUser('userId') userId: string, @Req() req: any
+    ) {
+        console.log('request.user in controller:', req.user);
+        console.log('userId from token in upgrade-status:', userId);
+        const result = await this.upgradeRequestService.getRequestsByUser(userId);
+        console.log('requests returned:', result);
+        return result;
     }
 
     @Get('upgrade-requests/pending')
@@ -86,5 +120,15 @@ export class UpgradeRequestController {
         @Body() body: { adminNote?: string }
     ) {
         return await this.upgradeRequestService.rejectRequest(id, body.adminNote);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('upgrade-payment-confirm')
+    async confirmUpgradePayment(
+        @ActiveUser('userId') userId: string,
+        @Body() body: { upgradeRequestId: string; paymentId: string; amount:number ; currency:string }
+    ) {
+        console.log('confirmUpgradePayment in upgrade-request.controller.ts received:', { userId, ...body });
+        return await this.upgradeRequestService.confirmPayment(userId, body.upgradeRequestId, body.paymentId,body.amount,body.currency);
     }
 }

@@ -28,7 +28,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
       secretOrKey: configService.get<string>('JWT_SECRET')!,
     });
     const secret = configService.get<string>('JWT_SECRET');
-    console.log("JWT_SECRET used in strategy: ", secret);
+    // console.log("JWT_SECRET used in strategy: ", secret);
   }
 
   validate(payload: TokenPayload): TokenPayload {

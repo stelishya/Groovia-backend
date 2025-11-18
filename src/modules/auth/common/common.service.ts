@@ -105,16 +105,12 @@ export class CommonService implements ICommonService{
       if (!user) {
         // new user -create account with selected role
         // sanitizedUsername -remove spaces and special chars, keep only alphanumeric and underscores
-        let sanitizedUsername = fullname
-          ?.replace(/[^a-zA-Z0-9_]/g, '_')
-          .replace(/_+/g, '_')
-          .replace(/^_|_$/g, '')
-          .toLowerCase() || 'user';
+        let sanitizedUsername = fullname?.trim() || 'user';
         
         // ensure username is unique by appending part of googleId if needed
         const existingUser = await this._userService.findByUsername(sanitizedUsername);
         if (existingUser) {
-          sanitizedUsername = `${sanitizedUsername}_${googleId.substring(0, 6)}`;
+          sanitizedUsername = `${sanitizedUsername} ${googleId.substring(0, 6)}`;
         }
 
         user = await this._userService.createGoogleUser({

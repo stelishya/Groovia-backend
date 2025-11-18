@@ -68,7 +68,7 @@ export class UserAuthService implements IUserAuthService {
         signupDto: SignupDto
     ): Promise<SignupResponse | VerificationResponse> {
         try {
-            const { username, email, phone, role, password, confirmPassword, otp } = signupDto;
+            const { username, email, role, password, confirmPassword, otp } = signupDto;
             if (otp) {
                 console.log("otp in user auth service", otp)
                 console.log(`[Signup Step 2] Attempting to verify OTP for ${email}`);
@@ -81,16 +81,17 @@ export class UserAuthService implements IUserAuthService {
                 try {
                     const hashedPassword = await this._hashingService.hashPassword(password);
                     // const user = await this._userService.createUser({ username, email, phone, role, password:hashedPassword });
-
+                    console.log("hashed password", hashedPassword)
                     // Convert role to array since schema expects string[]
                     const roleArray: string[] = Array.isArray(role) ? role : [role];
                     const user = await this._userService.createUser({
                         username,
                         email,
-                        phone,
+                        // phone,
                         role: roleArray,
                         password: hashedPassword
                     });
+                    console.log("user created", user)
                     console.log(`[Signup Step 2] User created successfully for ${email}`);
                     return {
                         success: true,
