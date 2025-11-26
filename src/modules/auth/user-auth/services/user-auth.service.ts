@@ -15,6 +15,7 @@ import { SignupDto, SignupResponse, VerificationResponse, VerifyOtpResponse } fr
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class UserAuthService implements IUserAuthService {
@@ -316,6 +317,31 @@ export class UserAuthService implements IUserAuthService {
         } catch (error) {
             this._logger.error("Error resetting password", error.message)
             console.log("Error resetting password")
+            throw error;
+        }
+    }
+
+
+    async changePassword(userId: string, changePasswordDto: any): Promise<{ success: boolean; message: string }> {
+        try {
+            const { currentPassword, newPassword } = changePasswordDto;
+            const user = await this._userService.findOne({ _id: userId });
+
+            if (!user) {
+                throw new UnauthorizedException('User not found');
+            }
+
+            const isPasswordValid = await this._hashingService.comparePassword(currentPassword, user.password);
+            if (!isPasswordValid) {
+                throw new UnauthorizedException('Invalid current password');
+            }
+
+            const hashedPassword = await this._hashingService.hashPassword(newPassword);
+            await this._userService.updatePassword(new Types.ObjectId(userId), hashedPassword);
+
+            return { success: true, message: 'Password changed successfully' };
+        } catch (error) {
+            this._logger.error(`Failed to change password for user ${userId}: ${error.message}`);
             throw error;
         }
     }

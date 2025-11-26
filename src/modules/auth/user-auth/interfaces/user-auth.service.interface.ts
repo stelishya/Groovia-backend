@@ -8,17 +8,18 @@ export interface IUserAuthService {
     login(
         email: string,
         password: string,
-        res:Response,
-    ): Promise<{user:User;accessToken:string}>;
+        res: Response,
+    ): Promise<{ user: User; accessToken: string }>;
     signup(
-        signupDto:SignupDto,
+        signupDto: SignupDto,
     ): Promise<SignupResponse | VerificationResponse>;
     // verifySignup(verifySignupDto: SignupDto): Promise<{success:boolean; data:{user:User}}>;
-    resendOtp(email:string): Promise<boolean>;
+    resendOtp(email: string): Promise<boolean>;
     verifyOtp(
-        email:string,
-        otp:string,
+        email: string,
+        otp: string,
     ): Promise<VerifyOtpResponse>
     forgotPassword(email: string): Promise<{ success: boolean; message: string }>;
-    resetPassword(token:string,newPassword:string): Promise<boolean>;
+    resetPassword(token: string, newPassword: string): Promise<boolean>;
+    changePassword(userId: string, changePasswordDto: any): Promise<{ success: boolean; message: string }>;
 }

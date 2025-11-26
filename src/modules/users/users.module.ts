@@ -13,19 +13,20 @@ import { IUpgradeRequestServiceToken } from './interfaces/upgrade-request.servic
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports:[MongooseModule.forFeature([
-    {name:User.name,schema:userSchema},
-    {name:UpgradeRequest.name,schema:upgradeRequestSchema}
+  imports: [MongooseModule.forFeature([
+    { name: User.name, schema: userSchema },
+    { name: UpgradeRequest.name, schema: upgradeRequestSchema }
   ]),
-  NotificationsModule,
+    NotificationsModule,
   ],
-  controllers:[UpgradeRequestController],
+  controllers: [UpgradeRequestController],
   providers: [
-    { provide:IUserServiceToken, useClass:UsersService},
-    { provide:IUserRepositoryToken, useClass:UserRepository},
-    {provide:IBaseRepositoryToken,useClass:UserRepository},
-    {provide:IUpgradeRequestServiceToken,useClass:UpgradeRequestService}
+    UsersService,
+    { provide: IUserServiceToken, useClass: UsersService },
+    { provide: IUserRepositoryToken, useClass: UserRepository },
+    { provide: IBaseRepositoryToken, useClass: UserRepository },
+    { provide: IUpgradeRequestServiceToken, useClass: UpgradeRequestService }
   ],
-  exports:[IUserServiceToken,IUserRepositoryToken,IBaseRepositoryToken,IUpgradeRequestServiceToken]
+  exports: [IUserServiceToken, IUserRepositoryToken, IBaseRepositoryToken, IUpgradeRequestServiceToken, UsersService]
 })
-export class UsersModule {}
+export class UsersModule { }

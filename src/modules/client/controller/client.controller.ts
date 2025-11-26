@@ -1,10 +1,10 @@
 import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Query, Req, UseGuards, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Public } from 'src/common/decorators/public.decorator';
-import { CreateRequestDto, updateBookingStatusDto, UpdateClientProfileDto } from './dto/client.dto';
-import { ClientService } from './client.service';
+import { CreateRequestDto, updateBookingStatusDto, UpdateClientProfileDto } from '../dto/client.dto';
+import { ClientService } from '../services/client.service';
 import { ActiveUser } from 'src/common/decorators/active-user.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwtAuth.guard';
+import { JwtAuthGuard } from '../../auth/guards/jwtAuth.guard';
 import { MESSAGES } from 'src/common/constants/constants';
 import { ApiResponse } from 'src/common/models/common-response.model';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
@@ -71,10 +71,10 @@ export class ClientController {
                 profileImage: result.Location
             });
 
-            return ApiResponse.success({ 
-                message: 'Profile picture uploaded successfully', 
+            return ApiResponse.success({
+                message: 'Profile picture uploaded successfully',
                 user: updatedUser,
-                imageUrl: result.Location 
+                imageUrl: result.Location
             });
         } catch (error) {
             throw new BadRequestException('Failed to upload profile picture');
@@ -89,10 +89,22 @@ export class ClientController {
         @Body() updateData: UpdateClientProfileDto,
     ) {
         const updatedUser = await this._clientService.updateClientProfile(userId, updateData);
-        console.log("updatedUser",updatedUser)
+        console.log("updatedUser", updatedUser)
         console.log("sending response to frontend")
         return ApiResponse.success({ message: MESSAGES.PROFILE_UPDATED_SUCCESSFULLY, user: updatedUser });
     }
+
+    // IMPORTANT: Specific routes MUST come before generic routes in NestJS
+    @UseGuards(JwtAuthGuard)
+    @Get('dancer-profile/:id')
+    @HttpCode(HttpStatus.OK)
+    async getDancerProfile(
+        @Param('id') dancerId: string,
+    ) {
+        const dancer = await this._clientService.getDancerProfile(dancerId);
+        return ApiResponse.success({ message: MESSAGES.DANCER_PROFILE_RETRIEVED_SUCCESSFULLY, dancer });
+    }
+
     // @Public()
     @Get()
     @HttpCode(HttpStatus.OK)
@@ -108,6 +120,7 @@ export class ClientController {
         const { dancers, total } = await this._clientService.getAllDancers({ location, sortBy, page: pageNumber, limit, danceStyle, search });
         return ApiResponse.success({ message: MESSAGES.DANCERS_RETRIEVED_SUCCESSFULLY, dancers, total, page, limit });
     }
+
 
     @UseGuards(JwtAuthGuard)
     @Post('event-requests')

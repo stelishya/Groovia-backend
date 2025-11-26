@@ -44,6 +44,35 @@ export class UpdateDancerProfileDto {
   @IsOptional()
   preferredLocation?: string;
 
+  @ApiPropertyOptional({ example: "Female" })
+  @IsString()
+  @IsOptional()
+  gender?: string;
+
+  @ApiPropertyOptional({ example: { "Hip Hop": "Advanced", "Ballet": "Intermediate" } })
+  @IsOptional()
+  danceStyleLevels?: { [key: string]: string };
+
+  @ApiPropertyOptional({
+    example: [
+      { awardName: "National Dance Championship", position: "1st Place", year: 2023 },
+      { awardName: "Regional Competition", position: "Winner", year: 2022 }
+    ]
+  })
+  @IsArray()
+  @IsOptional()
+  achievements?: Array<{ awardName: string; position: string; year: number | string }>;
+
+  @ApiPropertyOptional({
+    example: [
+      { name: "Advanced Ballet Certification", url: "https://drive.google.com/file/d/..." },
+      { name: "Hip-Hop Instructor License", url: "https://drive.google.com/file/d/..." }
+    ]
+  })
+  @IsArray()
+  @IsOptional()
+  certificates?: Array<{ name: string; url: string }>;
+
   @ApiPropertyOptional({ example: true })
   @IsBoolean()
   @IsOptional()

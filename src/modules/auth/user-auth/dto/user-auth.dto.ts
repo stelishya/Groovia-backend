@@ -1,11 +1,11 @@
-export interface VerifyOtpDto{
+export interface VerifyOtpDto {
     email: string;
     otp: string;
 }
 
-export interface LoginDto{
-    email:string;
-    password:string;
+export interface LoginDto {
+    email: string;
+    password: string;
 }
 
 export interface SignupDto {
@@ -40,4 +40,9 @@ export interface VerifyOtpResponse {
         message: string;
         otpInvalid: boolean;
     };
+}
+
+export interface ChangePasswordDto {
+    currentPassword: string;
+    newPassword: string;
 }
