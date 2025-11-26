@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { UpgradeRequest, UpgradeRequestStatus } from '../models/upgrade-request.schema';
@@ -7,6 +7,7 @@ import { IUpgradeRequestService } from '../interfaces/upgrade-request.service.in
 import { NotificationService } from 'src/modules/notifications/services/notification.service';
 import { NotificationType } from 'src/modules/notifications/models/notification.schema';
 import { Role } from 'src/common/enums/role.enum';
+import { RazorpayService } from 'src/common/payments/razorpay/razorpay.service';
 
 @Injectable()
 export class UpgradeRequestService implements IUpgradeRequestService {
@@ -15,6 +16,7 @@ export class UpgradeRequestService implements IUpgradeRequestService {
         @InjectModel(User.name)
         private userModel: Model<User>,
         private notificationService: NotificationService,
+        private razorpayService: RazorpayService,
     ) { }
 
     async createRequest(data: any): Promise<UpgradeRequest> {
@@ -160,8 +162,32 @@ export class UpgradeRequestService implements IUpgradeRequestService {
         return savedRequest;
     }
 
-    async confirmPayment(userId: string, upgradeRequestId: string, paymentId: string, amount: number, currency: string): Promise<{ success: boolean }> {
-        console.log('confirmPayment called with:', { userId, upgradeRequestId, paymentId, amount, currency });
+    async createPaymentOrder(userId: string, upgradeRequestId: string, amount: number, currency: string): Promise<any> {
+        const request = await this.upgradeRequestModel.findById(upgradeRequestId);
+        console.log('request in createPaymentOrder in upgrade-request.service.ts', request)
+        if (!request) {
+            throw new NotFoundException('Upgrade request not found');
+        }
+        if (request.userId.toString() !== userId) {
+            throw new BadRequestException('Request does not belong to the current user');
+        }
+        if (request.status !== UpgradeRequestStatus.APPROVED) {
+            throw new BadRequestException('Payment can only be initiated for approved requests');
+        }
+
+        const order = await this.razorpayService.createOrder(amount, currency, upgradeRequestId);
+
+        // Update request status to payment_pending if not already
+        if (request.paymentStatus !== 'paid') {
+            request.paymentStatus = 'pending';
+            await request.save();
+        }
+        console.log('order in createPaymentOrder in upgrade-request.service.ts', order)
+        return order;
+    }
+
+    async confirmPayment(userId: string, upgradeRequestId: string, paymentId: string, amount: number, currency: string, razorpayOrderId?: string, razorpaySignature?: string): Promise<{ success: boolean }> {
+        console.log('confirmPayment called with:', { userId, upgradeRequestId, paymentId, amount, currency, razorpayOrderId, razorpaySignature });
 
         const request = await this.upgradeRequestModel.findById(upgradeRequestId);
         console.log('request in confirmPayment in upgrade-request.service.ts', request)
@@ -181,6 +207,14 @@ export class UpgradeRequestService implements IUpgradeRequestService {
         }
         if (request.status !== UpgradeRequestStatus.APPROVED) {
             throw new BadRequestException('Payment can only be confirmed for approved requests');
+        }
+
+        // Verify payment if signature is provided
+        if (razorpayOrderId && razorpaySignature) {
+            const isValid = this.razorpayService.verifyPayment(razorpayOrderId, paymentId, razorpaySignature);
+            if (!isValid) {
+                throw new BadRequestException('Invalid payment signature');
+            }
         }
 
         const user = await this.userModel.findById(userId);
@@ -243,5 +277,21 @@ export class UpgradeRequestService implements IUpgradeRequestService {
             adminNote,
         );
         return savedRequest;
+    }
+
+    async upgradePaymentFailed(userId: string, requestId: string): Promise<any> {
+        const request = await this.upgradeRequestModel.findById(requestId);
+        if (!request) {
+            throw new NotFoundException('Upgrade request not found');
+        }
+
+        if (request.userId.toString() !== userId) {
+            throw new ForbiddenException('You can only update your own upgrade requests');
+        }
+
+        request.paymentStatus = 'failed';
+        await request.save();
+
+        return { message: 'Payment failed', request };
     }
 }

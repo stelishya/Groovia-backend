@@ -1,9 +1,9 @@
-import { 
-    Controller, 
-    Post, 
-    Get, 
+import {
+    Controller,
+    Post,
+    Get,
     Patch,
-    Body, 
+    Body,
     Param,
     UseInterceptors,
     UploadedFiles,
@@ -17,7 +17,7 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { Request } from 'express';
-import {type IUpgradeRequestService, IUpgradeRequestServiceToken } from '../interfaces/upgrade-request.service.interface';
+import { type IUpgradeRequestService, IUpgradeRequestServiceToken } from '../interfaces/upgrade-request.service.interface';
 import { Public } from 'src/common/decorators/public.decorator';
 import { ActiveUser } from 'src/common/decorators/active-user.decorator';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
@@ -28,7 +28,7 @@ export class UpgradeRequestController {
     constructor(
         @Inject(IUpgradeRequestServiceToken)
         private readonly upgradeRequestService: IUpgradeRequestService
-    ) {}
+    ) { }
 
     @Public()
     @Post('upgrade-role')
@@ -123,12 +123,30 @@ export class UpgradeRequestController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @Post('upgrade-payment')
+    async createUpgradePayment(
+        @ActiveUser('userId') userId: string,
+        @Body() body: { upgradeRequestId: string; amount: number; currency: string }
+    ) {
+        console.log("hi from upgrade-payment controller, body: ", body)
+        return await this.upgradeRequestService.createPaymentOrder(userId, body.upgradeRequestId, body.amount, body.currency);
+    }
+
+    @UseGuards(JwtAuthGuard)
     @Post('upgrade-payment-confirm')
     async confirmUpgradePayment(
         @ActiveUser('userId') userId: string,
-        @Body() body: { upgradeRequestId: string; paymentId: string; amount:number ; currency:string }
+        @Body() body: { upgradeRequestId: string; paymentId: string; amount: number; currency: string; razorpayOrderId?: string; razorpaySignature?: string }
     ) {
         console.log('confirmUpgradePayment in upgrade-request.controller.ts received:', { userId, ...body });
-        return await this.upgradeRequestService.confirmPayment(userId, body.upgradeRequestId, body.paymentId,body.amount,body.currency);
+        return await this.upgradeRequestService.confirmPayment(userId, body.upgradeRequestId, body.paymentId, body.amount, body.currency, body.razorpayOrderId, body.razorpaySignature);
+    }
+    @UseGuards(JwtAuthGuard)
+    @Patch('upgrade-payment-failed/:requestId')
+    async markPaymentFailed(
+        @ActiveUser('userId') userId: string,
+        @Param('requestId') requestId: string
+    ) {
+        return await this.upgradeRequestService.upgradePaymentFailed(userId, requestId);
     }
 }

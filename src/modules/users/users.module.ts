@@ -11,21 +11,24 @@ import { UpgradeRequestController } from './controllers/upgrade-request.controll
 import { UpgradeRequestService } from './services/upgrade-request.service';
 import { IUpgradeRequestServiceToken } from './interfaces/upgrade-request.service.interface';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { RazorpayModule } from 'src/common/payments/razorpay/razorpay.module';
 
 @Module({
-  imports:[MongooseModule.forFeature([
-    {name:User.name,schema:userSchema},
-    {name:UpgradeRequest.name,schema:upgradeRequestSchema}
-  ]),
-  NotificationsModule,
+  imports: [
+    MongooseModule.forFeature([
+      { name: User.name, schema: userSchema },
+      { name: UpgradeRequest.name, schema: upgradeRequestSchema }
+    ]),
+    NotificationsModule,
+    RazorpayModule
   ],
-  controllers:[UpgradeRequestController],
+  controllers: [UpgradeRequestController],
   providers: [
-    { provide:IUserServiceToken, useClass:UsersService},
-    { provide:IUserRepositoryToken, useClass:UserRepository},
-    {provide:IBaseRepositoryToken,useClass:UserRepository},
-    {provide:IUpgradeRequestServiceToken,useClass:UpgradeRequestService}
+    { provide: IUserServiceToken, useClass: UsersService },
+    { provide: IUserRepositoryToken, useClass: UserRepository },
+    { provide: IBaseRepositoryToken, useClass: UserRepository },
+    { provide: IUpgradeRequestServiceToken, useClass: UpgradeRequestService }
   ],
-  exports:[IUserServiceToken,IUserRepositoryToken,IBaseRepositoryToken,IUpgradeRequestServiceToken]
+  exports: [IUserServiceToken, IUserRepositoryToken, IBaseRepositoryToken, IUpgradeRequestServiceToken]
 })
-export class UsersModule {}
+export class UsersModule { }

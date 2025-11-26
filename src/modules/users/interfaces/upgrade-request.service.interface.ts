@@ -9,5 +9,7 @@ export interface IUpgradeRequestService {
     getRequestsByUser(userId: string): Promise<any[]>;
     approveRequest(id: string, adminNote?: string): Promise<UpgradeRequest>;
     rejectRequest(id: string, adminNote?: string): Promise<UpgradeRequest>;
-    confirmPayment(userId: string, upgradeRequestId: string, paymentId: string,amount:number, currency:string): Promise<{ success: boolean }>;
+    createPaymentOrder(userId: string, upgradeRequestId: string, amount: number, currency: string): Promise<any>;
+    confirmPayment(userId: string, upgradeRequestId: string, paymentId: string, amount: number, currency: string, razorpayOrderId?: string, razorpaySignature?: string): Promise<{ success: boolean }>;
+    upgradePaymentFailed(userId: string, requestId: string): Promise<any>;
 }
