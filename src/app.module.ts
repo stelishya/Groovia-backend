@@ -15,6 +15,7 @@ import { DancerModule } from './modules/dancer/dancer.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { StorageModule } from './common/storage/storage.module';
 import { RazorpayModule } from './common/payments/razorpay/razorpay.module';
+import { WorkshopsModule } from './modules/workshops/workshops.module';
 
 @Module({
   imports: [
@@ -60,7 +61,8 @@ import { RazorpayModule } from './common/payments/razorpay/razorpay.module';
     DancerModule,
     BookingsModule,
     StorageModule,
-    RazorpayModule
+    RazorpayModule,
+    WorkshopsModule,
   ],
   providers: [AppService],
   controllers: [AppController],
