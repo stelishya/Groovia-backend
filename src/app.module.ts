@@ -14,6 +14,7 @@ import { ClientModule } from './modules/client/client.module';
 import { DancerModule } from './modules/dancer/dancer.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { StorageModule } from './common/storage/storage.module';
+import { CompetitionModule } from './modules/competitions/competition.module';
 
 @Module({
   imports: [
@@ -58,7 +59,8 @@ import { StorageModule } from './common/storage/storage.module';
     ClientModule,
     DancerModule,
     BookingsModule,
-    StorageModule
+    StorageModule,
+    CompetitionModule
   ],
   providers: [AppService],
   controllers: [AppController],
