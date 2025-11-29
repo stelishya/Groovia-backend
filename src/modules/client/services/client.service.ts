@@ -7,8 +7,6 @@ import { Model, Types } from 'mongoose';
 import { CreateRequestDto, updateBookingStatusDto, UpdateClientProfileDto } from '../dto/client.dto';
 import { NotificationType } from '../../notifications/models/notification.schema';
 import { NotificationService } from '../../notifications/services/notification.service';
-import { UsersService } from '../../users/services/users.service';
-// import { UserService } from '../users/services/user.service';
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 interface LeanEvent extends Omit<Events, '_id' | 'clientId' | 'dancerId'> {
@@ -31,8 +29,8 @@ type SavedEvent = Events & { _id: Types.ObjectId };
 export class ClientService {
     constructor(
         @InjectModel(Events.name) private readonly _eventModel: Model<Events>,
-        @Inject(forwardRef(() => UsersService))
-        private readonly userService: UsersService,
+        @Inject(forwardRef(() => IUserServiceToken))
+        private readonly userService: IUserService,
         @Inject(forwardRef(() => NotificationService))
         private readonly notificationService: NotificationService,
     ) { }
