@@ -106,6 +106,79 @@ export class DancerController {
     }
 
     @UseGuards(JwtAuthGuard)
+    @Post('profile/upload-certificate')
+    @HttpCode(HttpStatus.OK)
+    @UseInterceptors(FileInterceptor('certificate', {
+        fileFilter: (req, file, cb) => {
+            if (file.mimetype.match(/\/(pdf|jpg|jpeg|png)$/)) {
+                cb(null, true);
+            } else {
+                cb(new BadRequestException('Only PDF and image files are allowed!'), false);
+            }
+        },
+        limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+    }))
+    async uploadCertificate(
+        @Req() req: AuthRequest,
+        @UploadedFile() file: Express.Multer.File,
+        @Body('name') certificateName?: string
+    ) {
+        if (!file) {
+            throw new BadRequestException('No file uploaded');
+        }
+
+        const userId = new Types.ObjectId(req.user.userId);
+        const fileName = `certificates/${userId}/${Date.now()}-${file.originalname}`;
+
+        try {
+            // Upload to S3
+            const result = await this.s3Service.uploadBuffer(
+                file.buffer,
+                fileName,
+                file.mimetype
+            );
+
+            // Get file extension
+            const fileType = file.originalname.split('.').pop()?.toLowerCase();
+
+            // Use provided name or filename without extension
+            const name = certificateName || file.originalname.replace(/\.[^/.]+$/, '');
+
+            // Get current user
+            const user = await this.userService.findOne({ _id: userId });
+            if (!user) {
+                throw new BadRequestException('User not found');
+            }
+            // Filter out any null or undefined values from existing certificates
+            const currentCertificates = (user.certificates || []).filter(cert => cert && cert.url && cert.name);
+
+            // Add new certificate
+            const newCertificate = {
+                name,
+                url: result.Location,
+                fileType
+            };
+
+            if (!newCertificate.url) {
+                throw new Error("Failed to generate certificate URL");
+            }
+
+            console.log("S3 Upload Result:", result);
+            console.log("New Certificate Object:", newCertificate);
+
+            // Return the new certificate object without saving to DB yet
+            // The frontend will add this to the form state, and it will be saved when the user clicks "Save Changes"
+            return ApiResponse.success({
+                message: 'Certificate uploaded successfully',
+                certificate: newCertificate
+            });
+        } catch (error) {
+            console.error('Certificate upload error:', error);
+            throw new BadRequestException('Failed to upload certificate');
+        }
+    }
+
+    @UseGuards(JwtAuthGuard)
     @Patch('profile')
     @HttpCode(HttpStatus.OK)
     async updateProfile(

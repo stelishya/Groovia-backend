@@ -5,13 +5,13 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Notification, NotificationSchema } from './models/notification.schema';
 
 @Module({
-  imports:[
+  imports: [
     MongooseModule.forFeature([
-      {name:Notification.name, schema:NotificationSchema}
+      { name: Notification.name, schema: NotificationSchema }
     ])
   ],
   providers: [NotificationService],
   controllers: [NotificationsController],
-  exports:[NotificationService],
+  exports: [NotificationService],
 })
-export class NotificationsModule {}
+export class NotificationsModule { }
