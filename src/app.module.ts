@@ -14,6 +14,8 @@ import { ClientModule } from './modules/client/client.module';
 import { DancerModule } from './modules/dancer/dancer.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
 import { StorageModule } from './common/storage/storage.module';
+import { RazorpayModule } from './common/payments/razorpay/razorpay.module';
+import { WorkshopsModule } from './modules/workshops/workshops.module';
 import { CompetitionModule } from './modules/competitions/competition.module';
 
 @Module({
@@ -60,6 +62,8 @@ import { CompetitionModule } from './modules/competitions/competition.module';
     DancerModule,
     BookingsModule,
     StorageModule,
+    RazorpayModule,
+    WorkshopsModule,
     CompetitionModule
   ],
   providers: [AppService],

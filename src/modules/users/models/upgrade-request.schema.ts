@@ -63,7 +63,7 @@ export class UpgradeRequest {
     })
     status: UpgradeRequestStatus;
 
-    @Prop({ type: String, enum: ['pending', 'paid'] })
+    @Prop({ type: String, enum: ['pending', 'paid','failed'] })
     paymentStatus?: string;
 
     @Prop({ type: String })
