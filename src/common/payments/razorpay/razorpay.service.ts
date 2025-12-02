@@ -31,7 +31,6 @@ export class RazorpayService {
             receipt,
         };
         try {
-            console.log("nan ivde ethi")
             const order = await this.razorpayInstance.orders.create(options);
             console.log("order created in razorpay.service.ts", order)
             return order;

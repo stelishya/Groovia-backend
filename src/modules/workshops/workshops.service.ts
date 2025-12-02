@@ -4,15 +4,20 @@ import { Model, Types } from 'mongoose';
 import { Workshop, WorkshopDocument } from './models/workshop.schema';
 import { CreateWorkshopDto } from './dto/create-workshop.dto';
 import { AwsS3Service } from '../../common/storage/aws-s3.service';
+import { WorkshopsRepository } from './repositories/workshops.repo';
 
 @Injectable()
 export class WorkshopsService {
     constructor(
         @InjectModel(Workshop.name) private workshopModel: Model<WorkshopDocument>,
         private readonly awsS3Service: AwsS3Service,
+        private readonly workshopsRepository: WorkshopsRepository
     ) { }
 
     async create(createWorkshopDto: CreateWorkshopDto, file: any, instructorId: string): Promise<Workshop> {
+        console.log("Creating workshop with instructorId:", instructorId);
+        console.log("Workshop data:", createWorkshopDto);
+
         let posterImage = createWorkshopDto.posterImage;
 
         // Upload file to S3 if provided
@@ -21,6 +26,7 @@ export class WorkshopsService {
             const fileName = `workshops/${uniqueSuffix}-${file.originalname}`;
             const uploadResult = await this.awsS3Service.uploadBuffer(file.buffer, fileName, file.mimetype);
             posterImage = uploadResult.Location;
+            console.log("Image uploaded to S3:", posterImage);
         }
 
         const newWorkshop = new this.workshopModel({
@@ -28,13 +34,19 @@ export class WorkshopsService {
             posterImage,
             instructor: new Types.ObjectId(instructorId),
         });
-        return newWorkshop.save();
+
+        const savedWorkshop = await newWorkshop.save();
+        console.log("Workshop created successfully:", {
+            id: savedWorkshop._id,
+            title: savedWorkshop.title,
+            instructor: savedWorkshop.instructor
+        });
+
+        return savedWorkshop;
     }
 
-    async findAll(query: any): Promise<Workshop[]> {
-        // Implement filtering logic based on query params (style, date, etc.)
-        // For now, return all
-        return this.workshopModel.find().populate('instructor', 'username profileImage').exec();
+    async findAll(query: any): Promise<{workshops:Workshop[],total:number,page:number,limit:number}> {
+        return this.workshopsRepository.findAllWithFilters(query);
     }
 
     async findOne(id: string): Promise<Workshop> {
@@ -61,6 +73,10 @@ export class WorkshopsService {
     }
 
     async getInstructorWorkshops(instructorId: string): Promise<Workshop[]> {
-        return this.workshopModel.find({ instructor: instructorId }).exec();
+        // Convert string to ObjectId for querying
+        const workshops = await this.workshopModel.find({
+            instructor: new Types.ObjectId(instructorId)
+        }).exec();
+        return workshops;
     }
 }

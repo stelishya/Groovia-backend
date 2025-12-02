@@ -4,6 +4,7 @@ import { StorageModule } from '../../common/storage/storage.module';
 import { Workshop, WorkshopSchema } from './models/workshop.schema';
 import { WorkshopsController } from './workshops.controller';
 import { WorkshopsService } from './workshops.service';
+import { WorkshopsRepository } from './repositories/workshops.repo';
 
 @Module({
     imports: [
@@ -11,7 +12,7 @@ import { WorkshopsService } from './workshops.service';
         StorageModule,
     ],
     controllers: [WorkshopsController],
-    providers: [WorkshopsService],
+    providers: [WorkshopsService, WorkshopsRepository],
     exports: [WorkshopsService],
 })
 export class WorkshopsModule { }
