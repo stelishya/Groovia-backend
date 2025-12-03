@@ -16,6 +16,7 @@ export class CompetitionService {
       date: new Date(createCompetitionDto.date),
       registrationDeadline: new Date(createCompetitionDto.registrationDeadline),
     };
+    console.log("ith comp service, competitionData : ",competitionData)
     return this.competitionRepository.create(competitionData);
   }
 

@@ -9,6 +9,8 @@ import {
   Query,
   UseGuards,
   Request,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { CompetitionService } from '../services/competition.service';
 import { JwtAuthGuard } from '../../auth/guards/jwtAuth.guard';
@@ -17,18 +19,42 @@ import { Role } from '../../../common/enums/role.enum';
 import { ActiveUser } from '../../../common/decorators/active-user.decorator';
 import { CreateCompetitionDto } from '../dto/create-competition.dto';
 import { UpdateCompetitionDto } from '../dto/update-competition.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
-@Controller('clients/competitions')
+@Controller('competitions')
 @UseGuards(JwtAuthGuard)
 export class CompetitionController {
-  constructor(private readonly competitionService: CompetitionService) {}
+  constructor(private readonly competitionService: CompetitionService) { }
 
   @Post()
   @Roles(Role.ORGANIZER)
+  @UseInterceptors(FileInterceptor('posterImage'))
   create(
-    @Body() createCompetitionDto: CreateCompetitionDto,
+    @Body() body: any, // Use 'any' for FormData, we'll validate manually
     @ActiveUser('sub') userId: string,
+    @UploadedFile() file: Express.Multer.File,
   ) {
+    console.log("ith comp controller, body:", body);
+    console.log("file:", file);
+
+    // Construct DTO from form data
+    const createCompetitionDto: CreateCompetitionDto = {
+      title: body.title,
+      description: body.description,
+      category: body.category,
+      style: body.style,
+      level: body.level,
+      age_category: body.age_category,
+      mode: body.mode,
+      duration: body.duration,
+      location: body.location,
+      meeting_link: body.meeting_link,
+      posterImage: file ? file.originalname : (body.posterImage || ''), // Use uploaded file name or base64
+      fee: Number(body.fee),
+      date: body.date,
+      registrationDeadline: body.registrationDeadline,
+    };
+
     return this.competitionService.create(createCompetitionDto, userId);
   }
 

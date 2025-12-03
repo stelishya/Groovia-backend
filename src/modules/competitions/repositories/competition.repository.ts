@@ -15,6 +15,7 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
   // Basic CRUD methods
   async create(data: Partial<Competition>): Promise<Competition> {
     const competition = new this.competitionModel(data);
+    console.log("ith comp repo, competition : ",competition)
     return competition.save();
   }
 

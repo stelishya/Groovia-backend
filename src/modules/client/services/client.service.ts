@@ -31,8 +31,8 @@ type SavedEvent = Events & { _id: Types.ObjectId };
 export class ClientService {
     constructor(
         @InjectModel(Events.name) private readonly _eventModel: Model<Events>,
-        @Inject(forwardRef(() => UsersService))
-        private readonly userService: UsersService,
+        @Inject(IUserServiceToken)
+        private readonly userService: IUserService,
         @Inject(forwardRef(() => NotificationService))
         private readonly notificationService: NotificationService,
     ) { }
