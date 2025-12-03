@@ -48,7 +48,7 @@ export class WorkshopsService {
         return savedWorkshop;
     }
 
-    async findAll(query: any): Promise<{workshops:Workshop[],total:number,page:number,limit:number}> {
+    async findAll(query: any): Promise<{ workshops: Workshop[], total: number, page: number, limit: number }> {
         return this.workshopsRepository.findAllWithFilters(query);
     }
 
@@ -60,8 +60,41 @@ export class WorkshopsService {
         return workshop;
     }
 
-    async update(id: string, updateWorkshopDto: any): Promise<Workshop> {
-        const updatedWorkshop = await this.workshopModel.findByIdAndUpdate(id, updateWorkshopDto, { new: true }).exec();
+    async update(id: string, updateWorkshopDto: any, file: any): Promise<Workshop> {
+        let updateData = { ...updateWorkshopDto };
+
+        // Parse sessions if it's a string (from FormData)
+        if (updateData.sessions && typeof updateData.sessions === 'string') {
+            try {
+                updateData.sessions = JSON.parse(updateData.sessions);
+            } catch (error) {
+                console.error('Failed to parse sessions:', error);
+                throw new BadRequestException('Invalid sessions format');
+            }
+        }
+
+        // Parse participants if it's a string (from FormData)
+        if (updateData.participants && typeof updateData.participants === 'string') {
+            try {
+                updateData.participants = JSON.parse(updateData.participants);
+            } catch (error) {
+                console.error('Failed to parse participants:', error);
+                throw new BadRequestException('Invalid participants format');
+            }
+        }
+        // If a new file is uploaded, upload to S3
+        if (file && file.buffer) {
+            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+            const fileName = `workshops/${uniqueSuffix}-${file.originalname}`;
+            const uploadResult = await this.awsS3Service.uploadBuffer(file.buffer, fileName, file.mimetype);
+            updateData.posterImage = uploadResult.Location;
+        }
+
+        const updatedWorkshop = await this.workshopModel.
+            findByIdAndUpdate(id, updateData, { new: true })
+            .populate('instructor', 'username profileImage')
+            .exec();
+
         if (!updatedWorkshop) {
             throw new NotFoundException(`Workshop with ID ${id} not found`);
         }
@@ -96,17 +129,30 @@ export class WorkshopsService {
             throw new NotFoundException('Workshop not found');
         }
 
-        // Add user to participants
+        // Initialize participants array if needed
         if (!workshop.participants) {
             workshop.participants = [];
         }
 
-        workshop.participants.push({
-            dancerId: new Types.ObjectId(userId),
-            paymentStatus: 'paid',
-            attendance: false,
-            registeredAt: new Date()
-        } as any);
+        // Check if user already has a participant entry (e.g., from a failed payment)
+        const participantIndex = workshop.participants.findIndex(
+            (p: any) => p.dancerId.toString() === userId
+        );
+
+        if (participantIndex !== -1) {
+            // Update existing participant's payment status to 'paid'
+            workshop.participants[participantIndex].paymentStatus = 'paid';
+            workshop.participants[participantIndex].registeredAt = new Date();
+        } else {
+            // Add new participant entry
+            workshop.participants.push({
+                dancerId: new Types.ObjectId(userId),
+                paymentStatus: 'paid',
+                attendance: false,
+                registeredAt: new Date()
+            } as any);
+        }
+
         await workshop.save();
 
         // TODO: Create a booking record in a separate Bookings collection if needed
@@ -200,7 +246,7 @@ export class WorkshopsService {
 
         // Execute aggregation
         const workshops = await this.workshopModel.aggregate(pipeline).exec();
-        console.log("workshops in service",workshops);
+        console.log("workshops in service", workshops);
         return {
             workshops,
             total,
@@ -246,8 +292,12 @@ export class WorkshopsService {
             throw new BadRequestException('Workshop is full');
         }
 
-        // Check if user already registered
-        if (workshop.participants && workshop.participants.some((p: any) => p.dancerId.toString() === userId)) {
+        // Check if user already registered with paid status
+        const existingParticipant = workshop.participants?.find(
+            (p: any) => p.dancerId.toString() === userId
+        );
+
+        if (existingParticipant && existingParticipant.paymentStatus === 'paid') {
             throw new BadRequestException('You are already registered for this workshop');
         }
 
@@ -274,5 +324,36 @@ export class WorkshopsService {
             console.error('Razorpay Order Creation Failed:', error);
             throw new BadRequestException('Failed to initiate payment order');
         }
+    }
+
+    async markPaymentFailed(workshopId: string, userId: string): Promise<void> {
+        const workshop = await this.workshopModel.findById(workshopId).exec();
+
+        if (!workshop) {
+            throw new NotFoundException('Workshop not found');
+        }
+
+        // Find if user already has a participant entry
+        const participantIndex = workshop.participants?.findIndex(
+            (p: any) => p.dancerId.toString() === userId
+        );
+
+        if (participantIndex !== undefined && participantIndex !== -1) {
+            // Update existing participant status to failed
+            workshop.participants[participantIndex].paymentStatus = 'failed';
+        } else {
+            // Add new participant with failed status
+            if (!workshop.participants) {
+                workshop.participants = [];
+            }
+            workshop.participants.push({
+                dancerId: new Types.ObjectId(userId),
+                paymentStatus: 'failed',
+                attendance: false,
+                registeredAt: new Date()
+            } as any);
+        }
+        console.log("workshop in markPaymentFailed", workshop);
+        await workshop.save();
     }
 }

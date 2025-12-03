@@ -68,8 +68,9 @@ export class WorkshopsController {
 
     @Patch(':id')
     @UseGuards(JwtAuthGuard)
-    update(@Param('id') id: string, @Body() updateWorkshopDto: any) {
-        return this.workshopsService.update(id, updateWorkshopDto);
+    @UseInterceptors(FileInterceptor('posterImage'))
+    update(@Param('id') id: string, @Body() updateWorkshopDto: any, @UploadedFile() file: Express.Multer.File) {
+        return this.workshopsService.update(id, updateWorkshopDto, file);
     }
 
     @Delete(':id')
@@ -98,5 +99,13 @@ export class WorkshopsController {
             body.orderId,
             body.signature
         );
+    }
+
+    @Post(':id/mark-payment-failed')
+    @UseGuards(JwtAuthGuard)
+    async markFailedPayment(@Param('id') id: string, @Request() req) {
+        console.log('markPaymentFailed called with:',id);
+        await this.workshopsService.markPaymentFailed(id, req.user.userId);
+        return { success: true, message: 'Payment marked as failed' };
     }
 }
