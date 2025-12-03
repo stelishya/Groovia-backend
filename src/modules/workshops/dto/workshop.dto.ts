@@ -70,3 +70,9 @@ export class CreateWorkshopDto {
     @Type(() => SessionDto)
     sessions: SessionDto[];
 }
+
+export class WorkshopBookingDto {
+    @IsString()
+    @IsNotEmpty()
+    workshopId: string;
+}

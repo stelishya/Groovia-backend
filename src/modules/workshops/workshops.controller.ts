@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { WorkshopsService } from './workshops.service';
-import { CreateWorkshopDto } from './dto/create-workshop.dto';
+import { CreateWorkshopDto } from './dto/workshop.dto';
 import { JwtAuthGuard } from '../auth/guards/jwtAuth.guard';
 // import { RolesGuard } from '../../auth/guards/roles.guard';
 // import { Roles } from '../../auth/decorators/roles.decorator';
@@ -21,6 +21,29 @@ export class WorkshopsController {
     @UseGuards(JwtAuthGuard)
     getInstructorWorkshops(@Request() req) {
         return this.workshopsService.getInstructorWorkshops(req.user.userId);
+    }
+
+    @Get('booked')
+    @UseGuards(JwtAuthGuard)
+    getBookedWorkshops(
+        @Request() req,
+        @Query('search') search?: string,
+        @Query('style') style?: string,
+        @Query('sortBy') sortBy?: string,
+        @Query('page') page?: string,
+        @Query('limit') limit?: string
+    ) {
+        console.log("ivda vaa")
+        const pageNum = page ? parseInt(page, 10) : 1;
+        const limitNum = limit ? parseInt(limit, 10) : 10;
+        return this.workshopsService.getBookedWorkshops(
+            req.user.userId,
+            search,
+            style,
+            sortBy,
+            pageNum,
+            limitNum
+        );
     }
     @Get('')
     findAll(@Query() query) {
@@ -43,5 +66,27 @@ export class WorkshopsController {
     @UseGuards(JwtAuthGuard)
     remove(@Param('id') id: string) {
         return this.workshopsService.remove(id);
+    }
+
+    @Post(':id/initiate-booking')
+    @UseGuards(JwtAuthGuard)
+    initiateBooking(@Param('id') id: string, @Request() req) {
+        return this.workshopsService.initiateWorkshopBooking(id, req.user.userId);
+    }
+
+    @Post(':id/confirm-booking')
+    @UseGuards(JwtAuthGuard)
+    confirmBooking(
+        @Param('id') id: string,
+        @Body() body: { paymentId: string; orderId: string; signature: string },
+        @Request() req
+    ) {
+        return this.workshopsService.confirmWorkshopBooking(
+            id,
+            req.user.userId,
+            body.paymentId,
+            body.orderId,
+            body.signature
+        );
     }
 }

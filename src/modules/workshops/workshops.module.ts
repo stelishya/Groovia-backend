@@ -4,11 +4,13 @@ import { StorageModule } from '../../common/storage/storage.module';
 import { Workshop, WorkshopSchema } from './models/workshop.schema';
 import { WorkshopsController } from './workshops.controller';
 import { WorkshopsService } from './workshops.service';
+import { RazorpayModule } from '../../common/payments/razorpay/razorpay.module';
 
 @Module({
     imports: [
         MongooseModule.forFeature([{ name: Workshop.name, schema: WorkshopSchema }]),
         StorageModule,
+        RazorpayModule
     ],
     controllers: [WorkshopsController],
     providers: [WorkshopsService],
