@@ -4,7 +4,7 @@ import { Model, Types } from 'mongoose';
 import { Workshop, WorkshopDocument } from './models/workshop.schema';
 import { CreateWorkshopDto } from './dto/workshop.dto';
 import { AwsS3Service } from '../../common/storage/aws-s3.service';
-import { WorkshopsRepository } from './repositories/workshops.repo';
+import { WorkshopsRepository } from './repositories/workshops.repository';
 
 import { RazorpayService } from '../../common/payments/razorpay/razorpay.service';
 

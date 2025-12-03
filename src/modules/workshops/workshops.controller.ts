@@ -22,7 +22,6 @@ export class WorkshopsController {
             sessions: typeof body.sessions === 'string' ? JSON.parse(body.sessions) : body.sessions,
             posterImage: '', // Placeholder - will be set by service after S3 upload
         };
-
         return this.workshopsService.create(createWorkshopDto, file, req.user.userId);
     }
 
