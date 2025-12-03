@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { Workshop, WorkshopDocument } from './models/workshop.schema';
 import { CreateWorkshopDto } from './dto/workshop.dto';
 import { AwsS3Service } from '../../common/storage/aws-s3.service';
+import { WorkshopsRepository } from './repositories/workshops.repo';
 
 import { RazorpayService } from '../../common/payments/razorpay/razorpay.service';
 
@@ -12,10 +13,14 @@ export class WorkshopsService {
     constructor(
         @InjectModel(Workshop.name) private workshopModel: Model<WorkshopDocument>,
         private readonly awsS3Service: AwsS3Service,
+        private readonly workshopsRepository: WorkshopsRepository,
         private readonly razorpayService: RazorpayService
     ) { }
 
     async create(createWorkshopDto: CreateWorkshopDto, file: any, instructorId: string): Promise<Workshop> {
+        console.log("Creating workshop with instructorId:", instructorId);
+        console.log("Workshop data:", createWorkshopDto);
+
         let posterImage = createWorkshopDto.posterImage;
 
         // Upload file to S3 if provided
@@ -24,6 +29,7 @@ export class WorkshopsService {
             const fileName = `workshops/${uniqueSuffix}-${file.originalname}`;
             const uploadResult = await this.awsS3Service.uploadBuffer(file.buffer, fileName, file.mimetype);
             posterImage = uploadResult.Location;
+            console.log("Image uploaded to S3:", posterImage);
         }
 
         const newWorkshop = new this.workshopModel({
@@ -31,13 +37,19 @@ export class WorkshopsService {
             posterImage,
             instructor: new Types.ObjectId(instructorId),
         });
-        return newWorkshop.save();
+
+        const savedWorkshop = await newWorkshop.save();
+        console.log("Workshop created successfully:", {
+            id: savedWorkshop._id,
+            title: savedWorkshop.title,
+            instructor: savedWorkshop.instructor
+        });
+
+        return savedWorkshop;
     }
 
-    async findAll(query: any): Promise<Workshop[]> {
-        // Implement filtering logic based on query params (style, date, etc.)
-        // For now, return all
-        return this.workshopModel.find().populate('instructor', 'username profileImage').exec();
+    async findAll(query: any): Promise<{workshops:Workshop[],total:number,page:number,limit:number}> {
+        return this.workshopsRepository.findAllWithFilters(query);
     }
 
     async findOne(id: string): Promise<Workshop> {
@@ -64,7 +76,47 @@ export class WorkshopsService {
     }
 
     async getInstructorWorkshops(instructorId: string): Promise<Workshop[]> {
-        return this.workshopModel.find({ instructor: instructorId }).exec();
+        // Convert string to ObjectId for querying
+        const workshops = await this.workshopModel.find({
+            instructor: new Types.ObjectId(instructorId)
+        }).exec();
+        return workshops;
+    }
+
+    async confirmWorkshopBooking(
+        workshopId: string,
+        userId: string,
+        paymentId: string,
+        orderId: string,
+        signature: string
+    ) {
+        const workshop = await this.workshopModel.findById(workshopId).exec();
+
+        if (!workshop) {
+            throw new NotFoundException('Workshop not found');
+        }
+
+        // Add user to participants
+        if (!workshop.participants) {
+            workshop.participants = [];
+        }
+
+        workshop.participants.push({
+            dancerId: new Types.ObjectId(userId),
+            paymentStatus: 'paid',
+            attendance: false,
+            registeredAt: new Date()
+        } as any);
+        await workshop.save();
+
+        // TODO: Create a booking record in a separate Bookings collection if needed
+        // TODO: Send confirmation email
+
+        return {
+            success: true,
+            message: 'Successfully registered for workshop',
+            workshop
+        };
     }
 
     async getBookedWorkshops(
@@ -222,41 +274,5 @@ export class WorkshopsService {
             console.error('Razorpay Order Creation Failed:', error);
             throw new BadRequestException('Failed to initiate payment order');
         }
-    }
-
-    async confirmWorkshopBooking(
-        workshopId: string,
-        userId: string,
-        paymentId: string,
-        orderId: string,
-        signature: string
-    ) {
-        const workshop = await this.workshopModel.findById(workshopId).exec();
-
-        if (!workshop) {
-            throw new NotFoundException('Workshop not found');
-        }
-
-        // Add user to participants
-        if (!workshop.participants) {
-            workshop.participants = [];
-        }
-
-        workshop.participants.push({
-            dancerId: new Types.ObjectId(userId),
-            paymentStatus: 'paid',
-            attendance: false,
-            registeredAt: new Date()
-        } as any);
-        await workshop.save();
-
-        // TODO: Create a booking record in a separate Bookings collection if needed
-        // TODO: Send confirmation email
-
-        return {
-            success: true,
-            message: 'Successfully registered for workshop',
-            workshop
-        };
     }
 }

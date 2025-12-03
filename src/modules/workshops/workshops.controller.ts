@@ -13,7 +13,16 @@ export class WorkshopsController {
     @Post()
     @UseGuards(JwtAuthGuard)
     @UseInterceptors(FileInterceptor('posterImage'))
-    create(@UploadedFile() file: Express.Multer.File, @Body() createWorkshopDto: CreateWorkshopDto, @Request() req) {
+    create(@UploadedFile() file: Express.Multer.File, @Body() body: any, @Request() req) {
+        // Parse and transform FormData fields before validation
+        const createWorkshopDto: CreateWorkshopDto = {
+            ...body,
+            fee: Number(body.fee),
+            maxParticipants: Number(body.maxParticipants),
+            sessions: typeof body.sessions === 'string' ? JSON.parse(body.sessions) : body.sessions,
+            posterImage: '', // Placeholder - will be set by service after S3 upload
+        };
+
         return this.workshopsService.create(createWorkshopDto, file, req.user.userId);
     }
 
@@ -47,6 +56,7 @@ export class WorkshopsController {
     }
     @Get('')
     findAll(@Query() query) {
+        console.log("Fetching workshops with query:", query);
         return this.workshopsService.findAll(query);
     }
 
