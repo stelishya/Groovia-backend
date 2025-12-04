@@ -17,6 +17,7 @@ export enum WorkshopStatus {
 export enum PaymentStatus {
     PENDING = 'pending',
     PAID = 'paid',
+    FAILED = 'failed',
 }
 
 @Schema()
