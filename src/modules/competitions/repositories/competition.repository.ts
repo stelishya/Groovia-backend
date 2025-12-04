@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Document } from 'mongoose';
 import { Competition } from '../models/competition.schema';
 import { BaseRepository } from '../../../common/repositories/base.repo';
+import { Types } from 'mongoose';
 
 @Injectable()
 export class CompetitionRepository extends BaseRepository<Competition, Competition & Document> {
@@ -15,7 +16,7 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
   // Basic CRUD methods
   async create(data: Partial<Competition>): Promise<Competition> {
     const competition = new this.competitionModel(data);
-    console.log("ith comp repo, competition : ",competition)
+    console.log("ith comp repo, competition : ", competition)
     return competition.save();
   }
 
@@ -69,5 +70,15 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
       .populate('organizer_id', 'username profileImage')
       .sort({ date: 1 })
       .exec();
+  }
+
+  async findRegisteredCompetitions(dancerId: string): Promise<Competition[]> {
+    const result = await this.competitionModel
+      .find({ 'registeredDancers.dancerId': new Types.ObjectId(dancerId) })
+      .populate('organizer_id', 'username profileImage')
+      .sort({ date: 1 })
+      .exec();
+    console.log("registeredCompetitions in comp repo, result : ", result)
+    return result;
   }
 }

@@ -63,4 +63,9 @@ export class CreateCompetitionDto {
   @IsNotEmpty()
   @IsDateString()
   registrationDeadline: string;
+
+  @IsNotEmpty()
+  @IsNumber()
+  @Min(1)
+  maxParticipants: number;
 }

@@ -53,6 +53,7 @@ export class CompetitionController {
       fee: Number(body.fee),
       date: body.date,
       registrationDeadline: body.registrationDeadline,
+      maxParticipants: Number(body.maxParticipants),
     };
 
     return this.competitionService.create(createCompetitionDto, userId);
@@ -78,6 +79,12 @@ export class CompetitionController {
   @Roles(Role.ORGANIZER)
   findMyCompetitions(@ActiveUser('sub') userId: string) {
     return this.competitionService.findByOrganizer(userId);
+  }
+
+  @Get('my-registrations')
+  @Roles(Role.DANCER)
+  findMyRegistrations(@ActiveUser('sub') userId: string) {
+    return this.competitionService.findRegisteredCompetitions(userId);
   }
 
   @Get(':id')
@@ -134,4 +141,39 @@ export class CompetitionController {
   ) {
     return this.competitionService.finalizeResults(competitionId, results);
   }
+
+  @Post(':id/initiate-payment')
+  @Roles(Role.DANCER)
+  initiatePayment(
+    @Param('id') competitionId: string,
+    @ActiveUser('sub') dancerId: string,
+    @Body() body: { amount: number; currency: string },
+  ) {
+    return this.competitionService.initiatePayment(competitionId, dancerId, body.amount, body.currency);
+  }
+
+  @Post(':id/confirm-payment')
+  @Roles(Role.DANCER)
+  confirmPayment(
+    @Param('id') competitionId: string,
+    @ActiveUser('sub') dancerId: string,
+    @Body() body: { paymentId: string; orderId: string; signature: string; amount: number },
+  ) {
+    return this.competitionService.confirmPayment(
+      competitionId,
+      dancerId,
+      body.paymentId,
+      body.orderId,
+      body.signature,
+      body.amount,
+    );
+  }
+
+  @Post(':id/mark-payment-failed')
+    @UseGuards(JwtAuthGuard)
+    async markFailedPayment(@Param('id') id: string, @Request() req) {
+        console.log('markPaymentFailed called with:',id);
+        await this.competitionService.markPaymentFailed(id, req.user.userId);
+        return { success: true, message: 'Payment marked as failed' };
+    }
 }

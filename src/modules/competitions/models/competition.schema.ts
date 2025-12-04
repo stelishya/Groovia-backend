@@ -29,7 +29,7 @@ export class RegisteredDancer {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   dancerId: Types.ObjectId;
 
-  @Prop({ required: true, enum: ['pending', 'completed', 'failed', 'refunded'] })
+  @Prop({ required: true, enum: ['pending', 'completed', 'failed', 'refunded','paid'] })
   paymentStatus: string;
 
   @Prop({ type: Number, default: 0 })
@@ -85,6 +85,9 @@ export class Competition extends Document {
 
   @Prop({ required: true, type: Date })
   date: Date;
+
+  @Prop({ required: true, type: Number })
+  maxParticipants: number;
 
   @Prop({ required: true, type: Date })
   registrationDeadline: Date;
