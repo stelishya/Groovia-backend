@@ -11,31 +11,39 @@ import {
   Request,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
+  Inject,
 } from '@nestjs/common';
-import { CompetitionService } from '../services/competition.service';
+// import { CompetitionService } from '../services/competition.service';
 import { JwtAuthGuard } from '../../auth/guards/jwtAuth.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { Role } from '../../../common/enums/role.enum';
 import { ActiveUser } from '../../../common/decorators/active-user.decorator';
 import { CreateCompetitionDto } from '../dto/create-competition.dto';
 import { UpdateCompetitionDto } from '../dto/update-competition.dto';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
+import {type ICompetitionService, ICompetitionServiceToken } from '../interfaces/competition.service.interface';
 
 @Controller('competitions')
 @UseGuards(JwtAuthGuard)
 export class CompetitionController {
-  constructor(private readonly competitionService: CompetitionService) { }
+  constructor(
+    @Inject(ICompetitionServiceToken)
+    private readonly _competitionService: ICompetitionService,
+    // private readonly competitionService: CompetitionService
+  ) { }
 
   @Post()
   @Roles(Role.ORGANIZER)
-  @UseInterceptors(FileInterceptor('posterImage'))
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'posterImage', maxCount: 1 },
+    { name: 'document', maxCount: 1 }
+  ]))
   create(
-    @Body() body: any, // Use 'any' for FormData, we'll validate manually
-    @ActiveUser('sub') userId: string,
-    @UploadedFile() file: Express.Multer.File,
+    @Body() body: any,
+    @ActiveUser('userId') userId: string,
+    @UploadedFiles() files: { posterImage?: Express.Multer.File[], document?: Express.Multer.File[] },
   ) {
-    console.log("ith comp controller, body:", body);
-    console.log("file:", file);
 
     // Construct DTO from form data
     const createCompetitionDto: CreateCompetitionDto = {
@@ -49,68 +57,115 @@ export class CompetitionController {
       duration: body.duration,
       location: body.location,
       meeting_link: body.meeting_link,
-      posterImage: file ? file.originalname : (body.posterImage || ''), // Use uploaded file name or base64
+      posterImage: body.posterImage || '',
       fee: Number(body.fee),
       date: body.date,
       registrationDeadline: body.registrationDeadline,
       maxParticipants: Number(body.maxParticipants),
     };
 
-    return this.competitionService.create(createCompetitionDto, userId);
+    return this._competitionService.create(
+      createCompetitionDto,
+      userId,
+      files?.posterImage?.[0],
+      files?.document?.[0],
+    );
   }
 
   @Get()
   findAll(@Query('category') category?: string, @Query('style') style?: string) {
     if (category) {
-      return this.competitionService.findByCategory(category);
+      return this._competitionService.findByCategory(category);
     }
     if (style) {
-      return this.competitionService.findByStyle(style);
+      return this._competitionService.findByStyle(style);
     }
-    return this.competitionService.findAll();
+    return this._competitionService.findAll();
   }
 
   @Get('active')
   findActiveCompetitions() {
-    return this.competitionService.findActiveCompetitions();
+    return this._competitionService.findActiveCompetitions();
   }
 
   @Get('my-competitions')
   @Roles(Role.ORGANIZER)
-  findMyCompetitions(@ActiveUser('sub') userId: string) {
-    return this.competitionService.findByOrganizer(userId);
+  findMyCompetitions(@Request() req) {
+    console.log("organizer nte id:", req.user.userId);
+    return this._competitionService.findByOrganizer(req.user.userId);
   }
 
   @Get('my-registrations')
   @Roles(Role.DANCER)
-  findMyRegistrations(@ActiveUser('sub') userId: string) {
-    return this.competitionService.findRegisteredCompetitions(userId);
+  findMyRegistrations(@ActiveUser('userId') userId: string) {
+    return this._competitionService.findRegisteredCompetitions(userId);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.competitionService.findOne(id);
+    return this._competitionService.findOne(id);
   }
 
   @Patch(':id')
   @Roles(Role.ORGANIZER)
-  update(@Param('id') id: string, @Body() updateCompetitionDto: UpdateCompetitionDto) {
-    return this.competitionService.update(id, updateCompetitionDto);
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'posterImage', maxCount: 1 },
+    { name: 'document', maxCount: 1 }
+  ]))
+  update(
+    @Param('id') id: string,
+    @Body() body: any,
+    @UploadedFiles() files: { posterImage?: Express.Multer.File[], document?: Express.Multer.File[] },
+  ) {
+    // Construct DTO from form data
+    const updateCompetitionDto: any = {
+      title: body.title,
+      description: body.description,
+      category: body.category,
+      style: body.style,
+      level: body.level,
+      age_category: body.age_category,
+      mode: body.mode,
+      duration: body.duration,
+      location: body.location,
+      meeting_link: body.meeting_link,
+      posterImage: body.posterImage || '',
+      fee: body.fee ? Number(body.fee) : undefined,
+      date: body.date,
+      registrationDeadline: body.registrationDeadline,
+      maxParticipants: body.maxParticipants ? Number(body.maxParticipants) : undefined,
+    };
+
+    // Remove undefined values
+    Object.keys(updateCompetitionDto).forEach(key =>
+      updateCompetitionDto[key] === undefined && delete updateCompetitionDto[key]
+    );
+
+    console.log("Update Controller - Files received:", files);
+    console.log("Update Controller - Document file:", files?.document?.[0]);
+    console.log("Update Controller - DTO:", updateCompetitionDto);
+
+    return this._competitionService.update(
+      id,
+      updateCompetitionDto,
+      files?.posterImage?.[0],
+      files?.document?.[0],
+    );
   }
 
   @Delete(':id')
   @Roles(Role.ORGANIZER)
   remove(@Param('id') id: string) {
-    return this.competitionService.remove(id);
+    return this._competitionService.remove(id);
   }
 
   @Post(':id/register')
   @Roles(Role.DANCER)
   registerForCompetition(
     @Param('id') competitionId: string,
-    @ActiveUser('sub') dancerId: string,
+    @ActiveUser('userId') dancerId: string,
   ) {
-    return this.competitionService.registerDancer(competitionId, dancerId);
+    return this._competitionService.registerDancer(competitionId, dancerId);
   }
 
   @Patch(':id/payment/:dancerId')
@@ -120,7 +175,7 @@ export class CompetitionController {
     @Param('dancerId') dancerId: string,
     @Body('paymentStatus') paymentStatus: string,
   ) {
-    return this.competitionService.updatePaymentStatus(competitionId, dancerId, paymentStatus);
+    return this._competitionService.updatePaymentStatus(competitionId, dancerId, paymentStatus);
   }
 
   @Patch(':id/score/:dancerId')
@@ -130,7 +185,7 @@ export class CompetitionController {
     @Param('dancerId') dancerId: string,
     @Body('score') score: number,
   ) {
-    return this.competitionService.updateScore(competitionId, dancerId, score);
+    return this._competitionService.updateScore(competitionId, dancerId, score);
   }
 
   @Post(':id/finalize')
@@ -139,27 +194,27 @@ export class CompetitionController {
     @Param('id') competitionId: string,
     @Body('results') results: any,
   ) {
-    return this.competitionService.finalizeResults(competitionId, results);
+    return this._competitionService.finalizeResults(competitionId, results);
   }
 
   @Post(':id/initiate-payment')
   @Roles(Role.DANCER)
   initiatePayment(
     @Param('id') competitionId: string,
-    @ActiveUser('sub') dancerId: string,
+    @ActiveUser('userId') dancerId: string,
     @Body() body: { amount: number; currency: string },
   ) {
-    return this.competitionService.initiatePayment(competitionId, dancerId, body.amount, body.currency);
+    return this._competitionService.initiatePayment(competitionId, dancerId, body.amount, body.currency);
   }
 
   @Post(':id/confirm-payment')
   @Roles(Role.DANCER)
   confirmPayment(
     @Param('id') competitionId: string,
-    @ActiveUser('sub') dancerId: string,
+    @ActiveUser('userId') dancerId: string,
     @Body() body: { paymentId: string; orderId: string; signature: string; amount: number },
   ) {
-    return this.competitionService.confirmPayment(
+    return this._competitionService.confirmPayment(
       competitionId,
       dancerId,
       body.paymentId,
@@ -170,10 +225,10 @@ export class CompetitionController {
   }
 
   @Post(':id/mark-payment-failed')
-    @UseGuards(JwtAuthGuard)
-    async markFailedPayment(@Param('id') id: string, @Request() req) {
-        console.log('markPaymentFailed called with:',id);
-        await this.competitionService.markPaymentFailed(id, req.user.userId);
-        return { success: true, message: 'Payment marked as failed' };
-    }
+  @UseGuards(JwtAuthGuard)
+  async markFailedPayment(@Param('id') id: string, @Request() req) {
+    console.log('markPaymentFailed called with:', id);
+    await this._competitionService.markPaymentFailed(id, req.user.userId);
+    return { success: true, message: 'Payment marked as failed' };
+  }
 }

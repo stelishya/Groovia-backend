@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConsoleLogger, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Document } from 'mongoose';
 import { Competition } from '../models/competition.schema';
@@ -25,7 +25,9 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
   }
 
   async update(id: string, data: Partial<Competition>): Promise<Competition | null> {
-    return this.competitionModel.findByIdAndUpdate(id, data, { new: true }).exec();
+    const updatedCompetition = await this.competitionModel.findByIdAndUpdate(id, data, { new: true }).exec();
+    console.log("hello update competition",updatedCompetition)
+    return updatedCompetition;
   }
 
   async delete(id: string): Promise<void> {
@@ -39,7 +41,7 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
   // Add any competition-specific repository methods here
   async findByOrganizer(organizerId: string): Promise<Competition[]> {
     return this.competitionModel
-      .find({ organizer_id: organizerId })
+      .find({ organizer_id: new Types.ObjectId(organizerId) })
       .populate('organizer_id', 'username profileImage')
       .sort({ createdAt: -1 })
       .exec();

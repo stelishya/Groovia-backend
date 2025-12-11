@@ -6,6 +6,8 @@ import { WorkshopsController } from './workshops.controller';
 import { WorkshopsService } from './workshops.service';
 import { WorkshopsRepository } from './repositories/workshops.repository';
 import { RazorpayModule } from '../../common/payments/razorpay/razorpay.module';
+import { IWorkshopServiceToken } from './interfaces/workshop.service.interface';
+import { IWorkshopRepoToken } from './interfaces/workshop.repo.interface';
 
 @Module({
     imports: [
@@ -14,7 +16,16 @@ import { RazorpayModule } from '../../common/payments/razorpay/razorpay.module';
         RazorpayModule
     ],
     controllers: [WorkshopsController],
-    providers: [WorkshopsService, WorkshopsRepository],
-    exports: [WorkshopsService],
+    providers: [
+        {
+          provide: IWorkshopServiceToken,
+          useClass: WorkshopsService
+        },
+        {
+          provide: IWorkshopRepoToken,
+          useClass: WorkshopsRepository
+        }
+    ],
+    exports: [IWorkshopServiceToken, IWorkshopRepoToken],
 })
 export class WorkshopsModule { }

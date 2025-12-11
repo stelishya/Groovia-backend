@@ -5,6 +5,8 @@ import { CompetitionService } from './services/competition.service';
 import { CompetitionRepository } from './repositories/competition.repository';
 import { Competition, CompetitionSchema } from './models/competition.schema';
 import { RazorpayModule } from 'src/common/payments/razorpay/razorpay.module';
+import { ICompetitionRepoToken } from './interfaces/competition.repo.interface';
+import { ICompetitionServiceToken } from './interfaces/competition.service.interface';
 
 @Module({
   imports: [
@@ -14,7 +16,16 @@ import { RazorpayModule } from 'src/common/payments/razorpay/razorpay.module';
     RazorpayModule,
   ],
   controllers: [CompetitionController],
-  providers: [CompetitionService, CompetitionRepository],
-  exports: [CompetitionService, CompetitionRepository],
+  providers: [
+    // CompetitionService, CompetitionRepository,
+    {
+      provide: ICompetitionServiceToken,
+      useClass: CompetitionService
+    },
+    {
+      provide: ICompetitionRepoToken,
+      useClass: CompetitionRepository
+    }],
+  exports: [ICompetitionServiceToken, ICompetitionRepoToken],
 })
-export class CompetitionModule {}
+export class CompetitionModule { }

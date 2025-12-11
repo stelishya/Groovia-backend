@@ -1,6 +1,5 @@
 import { Controller, Get, Inject, Logger, Param, Patch, Query } from '@nestjs/common';
-import { IAdminServiceToken } from './interfaces/admins.service.interface';
-import type { IAdminService } from './interfaces/admins.service.interface';
+import { IAdminServiceToken, type IAdminService } from './interfaces/admins.service.interface';
 import type{ GetAllUsersQueryDto } from './dto/admin.dto';
 import { User } from '../users/models/user.schema';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';

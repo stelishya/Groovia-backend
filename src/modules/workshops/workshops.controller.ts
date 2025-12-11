@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Query, UseInterceptors, UploadedFile, Inject } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { WorkshopsService } from './workshops.service';
 import { CreateWorkshopDto } from './dto/workshop.dto';
@@ -6,9 +6,14 @@ import { JwtAuthGuard } from '../auth/guards/jwtAuth.guard';
 // import { RolesGuard } from '../../auth/guards/roles.guard';
 // import { Roles } from '../../auth/decorators/roles.decorator';
 
+import {type IWorkshopService, IWorkshopServiceToken } from './interfaces/workshop.service.interface';
+
 @Controller('workshops')
 export class WorkshopsController {
-    constructor(private readonly workshopsService: WorkshopsService) { }
+    constructor(
+        @Inject(IWorkshopServiceToken)
+        private readonly _workshopsService: IWorkshopService
+    ) { }
 
     @Post()
     @UseGuards(JwtAuthGuard)
@@ -22,13 +27,13 @@ export class WorkshopsController {
             sessions: typeof body.sessions === 'string' ? JSON.parse(body.sessions) : body.sessions,
             posterImage: '', // Placeholder - will be set by service after S3 upload
         };
-        return this.workshopsService.create(createWorkshopDto, file, req.user.userId);
+        return this._workshopsService.create(createWorkshopDto, file, req.user.userId);
     }
 
     @Get('instructor')
     @UseGuards(JwtAuthGuard)
     getInstructorWorkshops(@Request() req) {
-        return this.workshopsService.getInstructorWorkshops(req.user.userId);
+        return this._workshopsService.getInstructorWorkshops(req.user.userId);
     }
 
     @Get('booked')
@@ -44,7 +49,7 @@ export class WorkshopsController {
         console.log("ivda vaa")
         const pageNum = page ? parseInt(page, 10) : 1;
         const limitNum = limit ? parseInt(limit, 10) : 10;
-        return this.workshopsService.getBookedWorkshops(
+        return this._workshopsService.getBookedWorkshops(
             req.user.userId,
             search,
             style,
@@ -56,32 +61,32 @@ export class WorkshopsController {
     @Get('')
     findAll(@Query() query) {
         console.log("Fetching workshops with query:", query);
-        return this.workshopsService.findAll(query);
+        return this._workshopsService.findAll(query);
     }
 
 
     @Get(':id')
     findOne(@Param('id') id: string) {
-        return this.workshopsService.findOne(id);
+        return this._workshopsService.findOne(id);
     }
 
     @Patch(':id')
     @UseGuards(JwtAuthGuard)
     @UseInterceptors(FileInterceptor('posterImage'))
     update(@Param('id') id: string, @Body() updateWorkshopDto: any, @UploadedFile() file: Express.Multer.File) {
-        return this.workshopsService.update(id, updateWorkshopDto, file);
+        return this._workshopsService.update(id, updateWorkshopDto, file);
     }
 
     @Delete(':id')
     @UseGuards(JwtAuthGuard)
     remove(@Param('id') id: string) {
-        return this.workshopsService.remove(id);
+        return this._workshopsService.remove(id);
     }
 
     @Post(':id/initiate-booking')
     @UseGuards(JwtAuthGuard)
     initiateBooking(@Param('id') id: string, @Request() req) {
-        return this.workshopsService.initiateWorkshopBooking(id, req.user.userId);
+        return this._workshopsService.initiateWorkshopBooking(id, req.user.userId);
     }
 
     @Post(':id/confirm-booking')
@@ -91,7 +96,7 @@ export class WorkshopsController {
         @Body() body: { paymentId: string; orderId: string; signature: string },
         @Request() req
     ) {
-        return this.workshopsService.confirmWorkshopBooking(
+        return this._workshopsService.confirmWorkshopBooking(
             id,
             req.user.userId,
             body.paymentId,
@@ -103,8 +108,8 @@ export class WorkshopsController {
     @Post(':id/mark-payment-failed')
     @UseGuards(JwtAuthGuard)
     async markFailedPayment(@Param('id') id: string, @Request() req) {
-        console.log('markPaymentFailed called with:',id);
-        await this.workshopsService.markPaymentFailed(id, req.user.userId);
+        console.log('markPaymentFailed called with:', id);
+        await this._workshopsService.markPaymentFailed(id, req.user.userId);
         return { success: true, message: 'Payment marked as failed' };
     }
 }

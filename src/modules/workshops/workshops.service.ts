@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Workshop, WorkshopDocument } from './models/workshop.schema';
@@ -7,14 +7,17 @@ import { AwsS3Service } from '../../common/storage/aws-s3.service';
 import { WorkshopsRepository } from './repositories/workshops.repository';
 
 import { RazorpayService } from '../../common/payments/razorpay/razorpay.service';
+import { type IWorkshopRepo, IWorkshopRepoToken } from './interfaces/workshop.repo.interface';
+import { IWorkshopService } from './interfaces/workshop.service.interface';
 
 @Injectable()
-export class WorkshopsService {
+export class WorkshopsService implements IWorkshopService {
     constructor(
-        @InjectModel(Workshop.name) private workshopModel: Model<WorkshopDocument>,
+        @Inject(IWorkshopRepoToken)
+        private readonly _workshopRepository: IWorkshopRepo,
         private readonly awsS3Service: AwsS3Service,
-        private readonly workshopsRepository: WorkshopsRepository,
         private readonly razorpayService: RazorpayService
+        // @InjectModel(Workshop.name) private workshopModel: Model<WorkshopDocument>,
     ) { }
 
     async create(createWorkshopDto: CreateWorkshopDto, file: any, instructorId: string): Promise<Workshop> {
@@ -32,32 +35,37 @@ export class WorkshopsService {
             console.log("Image uploaded to S3:", posterImage);
         }
 
-        const newWorkshop = new this.workshopModel({
+        const workshopData = {
             ...createWorkshopDto,
             posterImage,
             instructor: new Types.ObjectId(instructorId),
-        });
+        };
 
-        const savedWorkshop = await newWorkshop.save();
+        const savedWorkshop = await this._workshopRepository.create(workshopData);
         console.log("Workshop created successfully:", {
             id: savedWorkshop._id,
             title: savedWorkshop.title,
             instructor: savedWorkshop.instructor
         });
 
-        return savedWorkshop;
+        // Return with signed URL
+        const workshopObj = savedWorkshop.toObject ? savedWorkshop.toObject() : savedWorkshop;
+        return this.addSignedUrlsToWorkshop(workshopObj);
     }
 
     async findAll(query: any): Promise<{ workshops: Workshop[], total: number, page: number, limit: number }> {
-        return this.workshopsRepository.findAllWithFilters(query);
+        return this._workshopRepository.findAllWithFilters(query);
     }
 
     async findOne(id: string): Promise<Workshop> {
-        const workshop = await this.workshopModel.findById(id).populate('instructor', 'username profileImage').exec();
+        const workshop = await this._workshopRepository.findById(id);
         if (!workshop) {
             throw new NotFoundException(`Workshop with ID ${id} not found`);
         }
-        return workshop;
+
+        // Return with signed URL
+        const workshopObj = workshop.toObject ? workshop.toObject() : workshop;
+        return this.addSignedUrlsToWorkshop(workshopObj);
     }
 
     async update(id: string, updateWorkshopDto: any, file: any): Promise<Workshop> {
@@ -90,30 +98,32 @@ export class WorkshopsService {
             updateData.posterImage = uploadResult.Location;
         }
 
-        const updatedWorkshop = await this.workshopModel.
-            findByIdAndUpdate(id, updateData, { new: true })
-            .populate('instructor', 'username profileImage')
-            .exec();
+        const updatedWorkshop = await this._workshopRepository.update(id, updateData);
 
         if (!updatedWorkshop) {
             throw new NotFoundException(`Workshop with ID ${id} not found`);
         }
-        return updatedWorkshop;
+
+        // Return with signed URL
+        const workshopObj = updatedWorkshop.toObject ? updatedWorkshop.toObject() : updatedWorkshop;
+        return this.addSignedUrlsToWorkshop(workshopObj);
     }
 
     async remove(id: string): Promise<void> {
-        const result = await this.workshopModel.findByIdAndDelete(id).exec();
+        const result = await this._workshopRepository.delete(id);
         if (!result) {
             throw new NotFoundException(`Workshop with ID ${id} not found`);
         }
     }
 
     async getInstructorWorkshops(instructorId: string): Promise<Workshop[]> {
-        // Convert string to ObjectId for querying
-        const workshops = await this.workshopModel.find({
-            instructor: new Types.ObjectId(instructorId)
-        }).exec();
-        return workshops;
+        const workshops = await this._workshopRepository.findByInstructor(instructorId);
+
+        // Add signed URLs to all workshops
+        return Promise.all(workshops.map(async (workshop) => {
+            const workshopObj = workshop.toObject ? workshop.toObject() : workshop;
+            return this.addSignedUrlsToWorkshop(workshopObj);
+        }));
     }
 
     async confirmWorkshopBooking(
@@ -123,7 +133,7 @@ export class WorkshopsService {
         orderId: string,
         signature: string
     ) {
-        const workshop = await this.workshopModel.findById(workshopId).exec();
+        const workshop = await this._workshopRepository.findById(workshopId);
 
         if (!workshop) {
             throw new NotFoundException('Workshop not found');
@@ -153,7 +163,7 @@ export class WorkshopsService {
             } as any);
         }
 
-        await workshop.save();
+        await this._workshopRepository.save(workshop);
 
         // TODO: Create a booking record in a separate Bookings collection if needed
         // TODO: Send confirmation email
@@ -236,19 +246,27 @@ export class WorkshopsService {
         pipeline.push({ $sort: sortStage });
 
         // Count total before pagination
-        const countPipeline = [...pipeline, { $count: 'total' }];
-        const countResult = await this.workshopModel.aggregate(countPipeline).exec();
-        const total = countResult.length > 0 ? countResult[0].total : 0;
+        const countPipeline = [...pipeline]; // Copy pipeline for counting
+
+        // This count logic was relying on Model.aggregate directly. 
+        // Now using repository method which accepts pipeline.
+        const total = await this._workshopRepository.countBookedWorkshops(countPipeline);
 
         // Pagination
         const skip = (page - 1) * limit;
         pipeline.push({ $skip: skip }, { $limit: limit });
 
         // Execute aggregation
-        const workshops = await this.workshopModel.aggregate(pipeline).exec();
+        const workshops = await this._workshopRepository.findBookedWorkshops(userId, pipeline);
         console.log("workshops in service", workshops);
+
+        // Add signed URLs
+        const workshopsWithUrls = await Promise.all(workshops.map(async (workshop) => {
+            return this.addSignedUrlsToWorkshop(workshop);
+        }));
+
         return {
-            workshops,
+            workshops: workshopsWithUrls,
             total,
             page,
             limit,
@@ -258,30 +276,38 @@ export class WorkshopsService {
 
     private async addSignedUrlsToWorkshop(workshop: any): Promise<any> {
         if (workshop.posterImage) {
-            // Check if it's already a full URL or just a key
-            if (workshop.posterImage.startsWith('http')) {
-                // Extract the key from the URL
-                const url = new URL(workshop.posterImage);
-                const key = url.pathname.substring(1); // Remove leading '/'
-                workshop.posterImage = this.awsS3Service.getSignedUrl(key);
-            } else {
-                workshop.posterImage = this.awsS3Service.getSignedUrl(workshop.posterImage);
+            try {
+                // Check if it's already a full URL or just a key
+                if (workshop.posterImage.startsWith('http')) {
+                    // Extract the key from the URL
+                    const url = new URL(workshop.posterImage);
+                    const key = url.pathname.substring(1); // Remove leading '/'
+                    workshop.posterImage = this.awsS3Service.getSignedUrl(key);
+                } else {
+                    workshop.posterImage = this.awsS3Service.getSignedUrl(workshop.posterImage);
+                }
+            } catch (e) {
+                console.error("Error signing poster URL:", e);
             }
         }
         if (workshop.instructor?.profileImage) {
-            if (workshop.instructor.profileImage.startsWith('http')) {
-                const url = new URL(workshop.instructor.profileImage);
-                const key = url.pathname.substring(1);
-                workshop.instructor.profileImage = this.awsS3Service.getSignedUrl(key);
-            } else {
-                workshop.instructor.profileImage = this.awsS3Service.getSignedUrl(workshop.instructor.profileImage);
+            try {
+                if (workshop.instructor.profileImage.startsWith('http')) {
+                    const url = new URL(workshop.instructor.profileImage);
+                    const key = url.pathname.substring(1);
+                    workshop.instructor.profileImage = this.awsS3Service.getSignedUrl(key);
+                } else {
+                    workshop.instructor.profileImage = this.awsS3Service.getSignedUrl(workshop.instructor.profileImage);
+                }
+            } catch (e) {
+                console.error("Error signing instructor profile URL:", e);
             }
         }
         return workshop;
     }
 
     async initiateWorkshopBooking(workshopId: string, userId: string) {
-        const workshop = await this.workshopModel.findById(workshopId).exec();
+        const workshop = await this._workshopRepository.findById(workshopId);
 
         if (!workshop) {
             throw new NotFoundException('Workshop not found');
@@ -327,7 +353,7 @@ export class WorkshopsService {
     }
 
     async markPaymentFailed(workshopId: string, userId: string): Promise<void> {
-        const workshop = await this.workshopModel.findById(workshopId).exec();
+        const workshop = await this._workshopRepository.findById(workshopId);
 
         if (!workshop) {
             throw new NotFoundException('Workshop not found');
@@ -354,6 +380,6 @@ export class WorkshopsService {
             } as any);
         }
         console.log("workshop in markPaymentFailed", workshop);
-        await workshop.save();
+        await this._workshopRepository.save(workshop);
     }
 }
