@@ -48,16 +48,17 @@ export class AdminsService implements IAdminService {
         }
     }
 
-    async blockUser(userId: Types.ObjectId): Promise<SuccessResponseDto> {
+    async blockUser(userId: string): Promise<SuccessResponseDto> {
         try {
-            const updatedUser = await this._userService.blockUser(userId);
+            const userObjectId = new Types.ObjectId(userId); // Convert in service
+            const updatedUser = await this._userService.blockUser(userObjectId);
             return {
-                success:true,
-                message: updatedUser?.isBlocked?"User blocked successfully":"User unblocked successfully",
+                success: true,
+                message: updatedUser?.isBlocked ? "User blocked successfully" : "User unblocked successfully",
             }
         } catch (error) {
             this._logger.error(`Error toggle blocking user: ${error}`);
-            throw new HttpException("Failed to toggle block user",HttpStatus.INTERNAL_SERVER_ERROR)
+            throw new HttpException("Failed to toggle block user", HttpStatus.INTERNAL_SERVER_ERROR)
         }
     }
 

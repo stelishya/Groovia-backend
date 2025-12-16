@@ -29,7 +29,7 @@ export class RegisteredDancer {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   dancerId: Types.ObjectId;
 
-  @Prop({ required: true, enum: ['pending', 'completed', 'failed', 'refunded','paid'] })
+  @Prop({ required: true, enum: ['pending', 'completed', 'failed', 'refunded', 'paid'] })
   paymentStatus: string;
 
   @Prop({ type: Number, default: 0 })

@@ -10,7 +10,7 @@ import { IHashingServiceToken } from 'src/common/hashing/interfaces/hashing.serv
 import type { ICommonService } from '../../common/interfaces/common-service.interface';
 import { ICommonServiceToken } from '../../common/interfaces/common-service.interface';
 import { type IOtpService, IOtpServiceToken } from '../interfaces/otp.service.interface';
-import { MailService } from 'src/modules/mail/mail.service';
+import { type IMailService, IMailServiceToken } from 'src/modules/mail/interfaces/mail.interface';
 import { SignupDto, SignupResponse, VerificationResponse, VerifyOtpResponse } from '../dto/user-auth.dto';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
@@ -27,7 +27,7 @@ export class UserAuthService implements IUserAuthService {
         @Inject(IOtpServiceToken) private readonly _otpService: IOtpService,
         @Inject(ICommonServiceToken)
         private readonly _commonService: ICommonService,
-        private readonly _mailService: MailService,
+        @Inject(IMailServiceToken) private readonly _mailService: IMailService,
         private readonly _configService: ConfigService
     ) { }
 

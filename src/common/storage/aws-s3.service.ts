@@ -2,9 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import AWS from 'aws-sdk';
 import * as fs from 'fs';
+import { IStorageService } from './interfaces/storage.interface';
 
 @Injectable()
-export class AwsS3Service {
+export class AwsS3Service implements IStorageService {
   private s3: AWS.S3;
   private readonly logger = new Logger(AwsS3Service.name);
   private readonly bucketName: string;
@@ -17,7 +18,7 @@ export class AwsS3Service {
     });
 
     this.s3 = new AWS.S3();
-    
+
     const bucketName = this.configService.get<string>('AWS_S3_BUCKET_NAME');
     if (!bucketName) {
       throw new Error('AWS_S3_BUCKET_NAME environment variable is not defined');
@@ -45,7 +46,7 @@ export class AwsS3Service {
       };
 
       const result = await this.s3.upload(params).promise();
-      console.log("result in uploadFile in aws-s3.service.ts : ",result)
+      console.log("result in uploadFile in aws-s3.service.ts : ", result)
       this.logger.log(`File uploaded successfully at: ${result.Location}`);
       return result;
     } catch (error) {
@@ -132,14 +133,14 @@ export class AwsS3Service {
    * @param expiresIn - URL expiration time in seconds (default: 3600)
    * @returns Signed URL
    */
-  getSignedUrl(fileName: string, expiresIn: number = 3600): string {
+  async getSignedUrl(fileName: string, expiresIn: number = 3600): Promise<string> {
     const params = {
       Bucket: this.bucketName,
       Key: fileName,
       Expires: expiresIn,
     };
 
-    return this.s3.getSignedUrl('getObject', params);
+    return this.s3.getSignedUrlPromise('getObject', params);
   }
 
   /**

@@ -16,7 +16,6 @@ import {
     UseInterceptors
 } from '@nestjs/common';
 import { Request } from 'express';
-import { Types } from 'mongoose';
 import { UpdateDancerProfileDto, CreateReviewDto } from './dto/dancer.dto';
 import { DancerService } from './dancer.service';
 // import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
@@ -28,7 +27,6 @@ import { MESSAGES } from 'src/common/constants/constants';
 import { ApiResponse } from 'src/common/models/common-response.model';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { AwsS3Service } from 'src/common/storage/aws-s3.service';
 
 
 interface AuthRequest extends Request {
@@ -43,8 +41,7 @@ export class DancerController {
     constructor(
         private readonly dancerService: DancerService,
         @Inject(IUserServiceToken)
-        private readonly userService: IUserService,
-        private readonly s3Service: AwsS3Service
+        private readonly userService: IUserService
     ) {
 
         console.log("DancerController initialized");
@@ -79,26 +76,13 @@ export class DancerController {
             throw new BadRequestException('No file uploaded');
         }
 
-        const userId = new Types.ObjectId(req.user.userId);
-        const fileName = `profiles/${userId}-${Date.now()}-${file.originalname}`;
-
         try {
-            // Upload to S3
-            const result = await this.s3Service.uploadBuffer(
-                file.buffer,
-                fileName,
-                file.mimetype
-            );
-
-            // Update user profile with new image URL
-            const userDetails = await this.dancerService.updateProfile(userId, {
-                profileImage: result.Location
-            });
+            const result = await this.dancerService.uploadProfilePicture(req.user.userId, file);
 
             return ApiResponse.success({
                 message: 'Profile picture uploaded successfully',
-                user: userDetails,
-                imageUrl: result.Location
+                user: result.user,
+                imageUrl: result.imageUrl
             });
         } catch (error) {
             throw new BadRequestException('Failed to upload profile picture');
@@ -127,50 +111,16 @@ export class DancerController {
             throw new BadRequestException('No file uploaded');
         }
 
-        const userId = new Types.ObjectId(req.user.userId);
-        const fileName = `certificates/${userId}/${Date.now()}-${file.originalname}`;
-
         try {
-            // Upload to S3
-            const result = await this.s3Service.uploadBuffer(
-                file.buffer,
-                fileName,
-                file.mimetype
+            const certificate = await this.dancerService.uploadCertificate(
+                req.user.userId,
+                file,
+                certificateName
             );
 
-            // Get file extension
-            const fileType = file.originalname.split('.').pop()?.toLowerCase();
-
-            // Use provided name or filename without extension
-            const name = certificateName || file.originalname.replace(/\.[^/.]+$/, '');
-
-            // Get current user
-            const user = await this.userService.findOne({ _id: userId });
-            if (!user) {
-                throw new BadRequestException('User not found');
-            }
-            // Filter out any null or undefined values from existing certificates
-            const currentCertificates = (user.certificates || []).filter(cert => cert && cert.url && cert.name);
-
-            // Add new certificate
-            const newCertificate = {
-                name,
-                url: result.Location,
-                fileType
-            };
-
-            if (!newCertificate.url) {
-                throw new Error("Failed to generate certificate URL");
-            }
-
-            console.log("S3 Upload Result:", result);
-            console.log("New Certificate Object:", newCertificate);
-
-            // Return the new certificate object without saving to DB yet
-            // The frontend will add this to the form state, and it will be saved when the user clicks "Save Changes"
             return ApiResponse.success({
                 message: 'Certificate uploaded successfully',
-                certificate: newCertificate
+                certificate
             });
         } catch (error) {
             console.error('Certificate upload error:', error);
@@ -186,18 +136,7 @@ export class DancerController {
         @Body() updateData: UpdateDancerProfileDto
     ) {
         console.log("updateProfile in dancer.controller.ts: ", req)
-        const userId = new Types.ObjectId(req.user.userId);
-        console.log("userId in dancer.controller.ts", userId)
-        // const updatedUser = await this.userService.updateOne(
-        //     { _id: userId },
-        //     { $set: updateData }
-        // );
-        // if (!updatedUser) {
-        //     throw new Error('Failed to update profile'); 
-        // }
-
-        // const { password, ...userDetails } = updatedUser.toObject();
-        const userDetails = await this.dancerService.updateProfile(userId, updateData);
+        const userDetails = await this.dancerService.updateProfile(req.user.userId, updateData);
         return ApiResponse.success({ message: MESSAGES.PROFILE_UPDATED_SUCCESSFULLY, user: userDetails });
     }
 

@@ -29,6 +29,11 @@ import { RazorpayModule } from 'src/common/payments/razorpay/razorpay.module';
     { provide: IBaseRepositoryToken, useClass: UserRepository },
     { provide: IUpgradeRequestServiceToken, useClass: UpgradeRequestService }
   ],
-  exports: [IUserServiceToken, IUserRepositoryToken, IBaseRepositoryToken, IUpgradeRequestServiceToken]
+  exports: [
+    IUserServiceToken,
+    IUserRepositoryToken,
+    IBaseRepositoryToken,
+    IUpgradeRequestServiceToken
+  ]
 })
 export class UsersModule { }

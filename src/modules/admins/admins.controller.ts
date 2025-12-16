@@ -1,6 +1,6 @@
 import { Controller, Get, Inject, Logger, Param, Patch, Query } from '@nestjs/common';
 import { IAdminServiceToken, type IAdminService } from './interfaces/admins.service.interface';
-import type{ GetAllUsersQueryDto } from './dto/admin.dto';
+import type { GetAllUsersQueryDto } from './dto/admin.dto';
 import { User } from '../users/models/user.schema';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { SuccessResponseDto } from '../users/dto/user.dto';
@@ -15,8 +15,8 @@ export class AdminsController {
     constructor(
         @Inject(IAdminServiceToken)
         private readonly _adminService: IAdminService,
-    ) {}
-    
+    ) { }
+
     // @Get('dashboard')
     // async getDashboard(@Query() query: unknown, @Param() param: unknown){
     //     return this._adminService.getDashboard();
@@ -24,23 +24,23 @@ export class AdminsController {
     @Get('users')
     async getAllUsers(
         @Query() query: GetAllUsersQueryDto,
-    ):Promise<{users:User[];total:number}> {
+    ): Promise<{ users: User[]; total: number }> {
         return await this._adminService.getAllUsers(query);
     }
 
     @Patch('users/:userId/status')
-    @ApiOperation({summary:"Block/Unblock user (toggle)"})
+    @ApiOperation({ summary: "Block/Unblock user (toggle)" })
     @ApiResponse({
-        status:HttpStatus.OK,
-        description:"User status toggled successfully",
-        type:SuccessResponseDto
+        status: HttpStatus.OK,
+        description: "User status toggled successfully",
+        type: SuccessResponseDto
     })
     @Roles(Role.ADMIN)
     async blockUser(
-        @Param('userId') userId:string,
-    ):Promise<SuccessResponseDto>{
+        @Param('userId') userId: string,
+    ): Promise<SuccessResponseDto> {
         this._logger.log(` Toggle Block user ${userId}`)
-        return await this._adminService.blockUser(new Types.ObjectId(userId));
+        return await this._adminService.blockUser(userId);
     }
 
 }

@@ -7,6 +7,7 @@ import { Model, Types } from 'mongoose';
 import { CreateRequestDto, updateBookingStatusDto, UpdateClientProfileDto } from '../dto/client.dto';
 import { NotificationType } from '../../notifications/models/notification.schema';
 import { NotificationService } from '../../notifications/services/notification.service';
+import { type IStorageService, IStorageServiceToken } from 'src/common/storage/interfaces/storage.interface';
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 interface LeanEvent extends Omit<Events, '_id' | 'clientId' | 'dancerId'> {
@@ -33,7 +34,31 @@ export class ClientService {
         private readonly userService: IUserService,
         @Inject(forwardRef(() => NotificationService))
         private readonly notificationService: NotificationService,
+        @Inject(IStorageServiceToken)
+        private readonly storageService: IStorageService,
     ) { }
+
+    async uploadProfilePicture(userId: string, file: Express.Multer.File): Promise<{ user: User; imageUrl: string }> {
+        const userObjectId = new Types.ObjectId(userId);
+        const fileName = `profiles/${userObjectId}-${Date.now()}-${file.originalname}`;
+
+        // Upload to S3
+        const result = await this.storageService.uploadBuffer(
+            file.buffer,
+            fileName,
+            file.mimetype
+        );
+
+        // Update user profile with new image URL
+        const updatedUser = await this.updateClientProfile(userId, {
+            profileImage: result.Location
+        });
+
+        return {
+            user: updatedUser,
+            imageUrl: result.Location
+        };
+    }
 
     async getProfileByUserId(userId: string): Promise<User> {
         const user = await this.userService.findById(userId);

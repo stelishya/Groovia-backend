@@ -10,6 +10,6 @@ export interface IAdminService {
     findOne(filter: Partial<Admin>): Promise<Admin | null>;
     createAdmin(adminData: any): Promise<Admin>;
     // getDashboard(): Promise<void>;
-    getAllUsers(query:GetAllUsersQueryDto): Promise<{users:User[];total:number}>;
-    blockUser(userId:Types.ObjectId):Promise<SuccessResponseDto>
+    getAllUsers(query: GetAllUsersQueryDto): Promise<{ users: User[]; total: number }>;
+    blockUser(userId: string): Promise<SuccessResponseDto>
 }

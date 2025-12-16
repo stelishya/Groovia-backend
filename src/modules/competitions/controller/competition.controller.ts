@@ -22,7 +22,7 @@ import { ActiveUser } from '../../../common/decorators/active-user.decorator';
 import { CreateCompetitionDto } from '../dto/create-competition.dto';
 import { UpdateCompetitionDto } from '../dto/update-competition.dto';
 import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
-import {type ICompetitionService, ICompetitionServiceToken } from '../interfaces/competition.service.interface';
+import { type ICompetitionService, ICompetitionServiceToken } from '../interfaces/competition.service.interface';
 
 @Controller('competitions')
 @UseGuards(JwtAuthGuard)
@@ -44,28 +44,8 @@ export class CompetitionController {
     @ActiveUser('userId') userId: string,
     @UploadedFiles() files: { posterImage?: Express.Multer.File[], document?: Express.Multer.File[] },
   ) {
-
-    // Construct DTO from form data
-    const createCompetitionDto: CreateCompetitionDto = {
-      title: body.title,
-      description: body.description,
-      category: body.category,
-      style: body.style,
-      level: body.level,
-      age_category: body.age_category,
-      mode: body.mode,
-      duration: body.duration,
-      location: body.location,
-      meeting_link: body.meeting_link,
-      posterImage: body.posterImage || '',
-      fee: Number(body.fee),
-      date: body.date,
-      registrationDeadline: body.registrationDeadline,
-      maxParticipants: Number(body.maxParticipants),
-    };
-
     return this._competitionService.create(
-      createCompetitionDto,
+      body,
       userId,
       files?.posterImage?.[0],
       files?.document?.[0],
@@ -117,37 +97,9 @@ export class CompetitionController {
     @Body() body: any,
     @UploadedFiles() files: { posterImage?: Express.Multer.File[], document?: Express.Multer.File[] },
   ) {
-    // Construct DTO from form data
-    const updateCompetitionDto: any = {
-      title: body.title,
-      description: body.description,
-      category: body.category,
-      style: body.style,
-      level: body.level,
-      age_category: body.age_category,
-      mode: body.mode,
-      duration: body.duration,
-      location: body.location,
-      meeting_link: body.meeting_link,
-      posterImage: body.posterImage || '',
-      fee: body.fee ? Number(body.fee) : undefined,
-      date: body.date,
-      registrationDeadline: body.registrationDeadline,
-      maxParticipants: body.maxParticipants ? Number(body.maxParticipants) : undefined,
-    };
-
-    // Remove undefined values
-    Object.keys(updateCompetitionDto).forEach(key =>
-      updateCompetitionDto[key] === undefined && delete updateCompetitionDto[key]
-    );
-
-    console.log("Update Controller - Files received:", files);
-    console.log("Update Controller - Document file:", files?.document?.[0]);
-    console.log("Update Controller - DTO:", updateCompetitionDto);
-
     return this._competitionService.update(
       id,
-      updateCompetitionDto,
+      body,
       files?.posterImage?.[0],
       files?.document?.[0],
     );

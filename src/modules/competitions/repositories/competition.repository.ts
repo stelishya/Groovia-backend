@@ -21,12 +21,12 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
   }
 
   async findAll(): Promise<Competition[]> {
-    return this.competitionModel.find().exec();
+    return this.competitionModel.find().populate('organizer_id', 'username profileImage').exec();
   }
 
   async update(id: string, data: Partial<Competition>): Promise<Competition | null> {
     const updatedCompetition = await this.competitionModel.findByIdAndUpdate(id, data, { new: true }).exec();
-    console.log("hello update competition",updatedCompetition)
+    console.log("hello update competition", updatedCompetition)
     return updatedCompetition;
   }
 
@@ -35,7 +35,10 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
   }
 
   async findByIdPublic(id: string): Promise<Competition | null> {
-    return this.findById(id);
+    return this.competitionModel.findById(id)
+      .populate('organizer_id', 'username profileImage')
+      .populate('registeredDancers.dancerId', 'username email profileImage role availableForPrograms')
+      .exec();
   }
 
   // Add any competition-specific repository methods here

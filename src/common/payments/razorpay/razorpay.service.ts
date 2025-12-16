@@ -2,9 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Razorpay from 'razorpay';
 import * as crypto from 'crypto';
+import { type IPaymentService } from '../interfaces/payment.interface';
 
 @Injectable()
-export class RazorpayService {
+export class RazorpayService implements IPaymentService {
     private razorpayInstance: Razorpay;
 
     constructor(private configService: ConfigService) {
@@ -39,7 +40,7 @@ export class RazorpayService {
         }
     }
 
-    verifyPayment(razorpayOrderId: string, razorpayPaymentId: string, razorpaySignature: string): boolean {
+    async verifyPayment(razorpayOrderId: string, razorpayPaymentId: string, razorpaySignature: string): Promise<boolean> {
         const keySecret = this.configService.get<string>('RAZORPAY_SECRET_KEY');
         if (!keySecret) {
             throw new Error('Razorpay key secret is not defined');

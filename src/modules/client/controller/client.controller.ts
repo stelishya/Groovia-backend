@@ -8,8 +8,6 @@ import { JwtAuthGuard } from '../../auth/guards/jwtAuth.guard';
 import { MESSAGES } from 'src/common/constants/constants';
 import { ApiResponse } from 'src/common/models/common-response.model';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
-import { AwsS3Service } from 'src/common/storage/aws-s3.service';
-import { Types } from 'mongoose';
 
 interface AuthRequest extends Request {
     user: {
@@ -22,8 +20,7 @@ interface AuthRequest extends Request {
 @Controller('clients')
 export class ClientController {
     constructor(
-        private readonly _clientService: ClientService,
-        private readonly s3Service: AwsS3Service
+        private readonly _clientService: ClientService
     ) { }
 
     @UseGuards(JwtAuthGuard)
@@ -55,26 +52,13 @@ export class ClientController {
             throw new BadRequestException('No file uploaded');
         }
 
-        const userObjectId = new Types.ObjectId(userId);
-        const fileName = `profiles/${userObjectId}-${Date.now()}-${file.originalname}`;
-
         try {
-            // Upload to S3
-            const result = await this.s3Service.uploadBuffer(
-                file.buffer,
-                fileName,
-                file.mimetype
-            );
-
-            // Update user profile with new image URL
-            const updatedUser = await this._clientService.updateClientProfile(userId, {
-                profileImage: result.Location
-            });
+            const result = await this._clientService.uploadProfilePicture(userId, file);
 
             return ApiResponse.success({
                 message: 'Profile picture uploaded successfully',
-                user: updatedUser,
-                imageUrl: result.Location
+                user: result.user,
+                imageUrl: result.imageUrl
             });
         } catch (error) {
             throw new BadRequestException('Failed to upload profile picture');

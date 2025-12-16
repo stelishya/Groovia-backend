@@ -6,7 +6,7 @@ import { JwtAuthGuard } from '../auth/guards/jwtAuth.guard';
 // import { RolesGuard } from '../../auth/guards/roles.guard';
 // import { Roles } from '../../auth/decorators/roles.decorator';
 
-import {type IWorkshopService, IWorkshopServiceToken } from './interfaces/workshop.service.interface';
+import { type IWorkshopService, IWorkshopServiceToken } from './interfaces/workshop.service.interface';
 
 @Controller('workshops')
 export class WorkshopsController {
@@ -19,15 +19,7 @@ export class WorkshopsController {
     @UseGuards(JwtAuthGuard)
     @UseInterceptors(FileInterceptor('posterImage'))
     create(@UploadedFile() file: Express.Multer.File, @Body() body: any, @Request() req) {
-        // Parse and transform FormData fields before validation
-        const createWorkshopDto: CreateWorkshopDto = {
-            ...body,
-            fee: Number(body.fee),
-            maxParticipants: Number(body.maxParticipants),
-            sessions: typeof body.sessions === 'string' ? JSON.parse(body.sessions) : body.sessions,
-            posterImage: '', // Placeholder - will be set by service after S3 upload
-        };
-        return this._workshopsService.create(createWorkshopDto, file, req.user.userId);
+        return this._workshopsService.create(body, file, req.user.userId);
     }
 
     @Get('instructor')
@@ -47,15 +39,9 @@ export class WorkshopsController {
         @Query('limit') limit?: string
     ) {
         console.log("ivda vaa")
-        const pageNum = page ? parseInt(page, 10) : 1;
-        const limitNum = limit ? parseInt(limit, 10) : 10;
         return this._workshopsService.getBookedWorkshops(
             req.user.userId,
-            search,
-            style,
-            sortBy,
-            pageNum,
-            limitNum
+            { search, style, sortBy, page, limit }
         );
     }
     @Get('')

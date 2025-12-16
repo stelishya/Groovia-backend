@@ -4,20 +4,40 @@ import { CompetitionRepository } from '../repositories/competition.repository';
 import { CreateCompetitionDto } from '../dto/create-competition.dto';
 import { UpdateCompetitionDto } from '../dto/update-competition.dto';
 import { Competition, CompetitionStatus } from '../models/competition.schema';
-import { RazorpayService } from 'src/common/payments/razorpay/razorpay.service';
-import { AwsS3Service } from 'src/common/storage/aws-s3.service';
-import {type ICompetitionRepo, ICompetitionRepoToken } from '../interfaces/competition.repo.interface';
+import { type ICompetitionRepo, ICompetitionRepoToken } from '../interfaces/competition.repo.interface';
 import { ICompetitionService } from '../interfaces/competition.service.interface';
+import { type IStorageService, IStorageServiceToken } from 'src/common/storage/interfaces/storage.interface';
+import { type IPaymentService, IPaymentServiceToken } from 'src/common/payments/interfaces/payment.interface';
+import { StorageUtils } from 'src/common/storage/utils/storage.utils';
 
 @Injectable()
 export class CompetitionService implements ICompetitionService {
   constructor(
     @Inject(ICompetitionRepoToken)
     private readonly _competitionRepository: ICompetitionRepo,
-    private readonly _awsService: AwsS3Service,
-    private readonly _razorpayService: RazorpayService) { }
+    @Inject(IStorageServiceToken) private readonly _storageService: IStorageService,
+    @Inject(IPaymentServiceToken) private readonly _paymentService: IPaymentService) { }
 
-  async create(createCompetitionDto: CreateCompetitionDto, organizerId: string, posterFile?: any, documentFile?: any): Promise<Competition> {
+  async create(body: any, organizerId: string, posterFile?: any, documentFile?: any): Promise<Competition> {
+    // Map DTO in service layer
+    const createCompetitionDto: CreateCompetitionDto = {
+      title: body.title,
+      description: body.description,
+      category: body.category,
+      style: body.style,
+      level: body.level,
+      age_category: body.age_category,
+      mode: body.mode,
+      duration: body.duration,
+      location: body.location,
+      meeting_link: body.meeting_link,
+      posterImage: body.posterImage || '',
+      fee: Number(body.fee),
+      date: body.date,
+      registrationDeadline: body.registrationDeadline,
+      maxParticipants: Number(body.maxParticipants),
+    };
+
     let posterImage = createCompetitionDto.posterImage;
     let documentUrl = '';
 
@@ -25,7 +45,7 @@ export class CompetitionService implements ICompetitionService {
     if (posterFile && posterFile.buffer) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const fileName = `competitions/${uniqueSuffix}-${posterFile.originalname}`;
-      const uploadResult = await this._awsService.uploadBuffer(posterFile.buffer, fileName, posterFile.mimetype);
+      const uploadResult = await this._storageService.uploadBuffer(posterFile.buffer, fileName, posterFile.mimetype);
       posterImage = uploadResult.Location;
       console.log("Competition image uploaded to S3:", posterImage);
     }
@@ -34,7 +54,7 @@ export class CompetitionService implements ICompetitionService {
     if (documentFile && documentFile.buffer) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const fileName = `competitions/documents/${uniqueSuffix}-${documentFile.originalname}`;
-      const uploadResult = await this._awsService.uploadBuffer(documentFile.buffer, fileName, documentFile.mimetype);
+      const uploadResult = await this._storageService.uploadBuffer(documentFile.buffer, fileName, documentFile.mimetype);
       documentUrl = uploadResult.Location;
       console.log("Competition document uploaded to S3:", documentUrl);
     }
@@ -96,50 +116,18 @@ export class CompetitionService implements ICompetitionService {
   }
 
   private async addSignedUrlsToCompetition(competition: any): Promise<any> {
-    console.log("=== addSignedUrlsToCompetition called ===");
-    console.log("Input posterImage:", competition.posterImage);
-
     if (competition.posterImage) {
-      // Check if it's already a full URL or just a key
-      if (competition.posterImage.startsWith('http')) {
-        // Extract the key from the URL
-        const url = new URL(competition.posterImage);
-        const key = url.pathname.substring(1); // Remove leading '/'
-        console.log("Extracted key from URL:", key);
-        competition.posterImage = this._awsService.getSignedUrl(key);
-      } else {
-        console.log("Using posterImage as key:", competition.posterImage);
-        competition.posterImage = this._awsService.getSignedUrl(competition.posterImage);
-      }
-      console.log("Generated signed URL:", competition.posterImage);
-    } else {
-      console.log("No posterImage found");
+      competition.posterImage = await StorageUtils.getSignedUrl(this._storageService, competition.posterImage);
     }
 
     // Handle organizer profile image if populated
     if (competition.organizer_id?.profileImage) {
-      if (competition.organizer_id.profileImage.startsWith('http')) {
-        const url = new URL(competition.organizer_id.profileImage);
-        const key = url.pathname.substring(1);
-        competition.organizer_id.profileImage = this._awsService.getSignedUrl(key);
-      } else {
-        competition.organizer_id.profileImage = this._awsService.getSignedUrl(competition.organizer_id.profileImage);
-      }
+      competition.organizer_id.profileImage = await StorageUtils.getSignedUrl(this._storageService, competition.organizer_id.profileImage);
     }
 
     // Handle document if populated
     if (competition.document) {
-      console.log("Found document field:", competition.document);
-      if (competition.document.startsWith('http')) {
-        const url = new URL(competition.document);
-        const key = url.pathname.substring(1);
-        competition.document = this._awsService.getSignedUrl(key);
-      } else {
-        competition.document = this._awsService.getSignedUrl(competition.document);
-      }
-      console.log("Generated signed URL for document:", competition.document);
-    } else {
-      console.log("No document field found in object");
+      competition.document = await StorageUtils.getSignedUrl(this._storageService, competition.document);
     }
 
     return competition;
@@ -157,7 +145,31 @@ export class CompetitionService implements ICompetitionService {
     return this._competitionRepository.findByStyle(style);
   }
 
-  async update(id: string, updateCompetitionDto: UpdateCompetitionDto, posterFile?: any, documentFile?: any): Promise<Competition> {
+  async update(id: string, body: any, posterFile?: any, documentFile?: any): Promise<Competition> {
+    // Map DTO in service layer
+    const updateCompetitionDto: any = {
+      title: body.title,
+      description: body.description,
+      category: body.category,
+      style: body.style,
+      level: body.level,
+      age_category: body.age_category,
+      mode: body.mode,
+      duration: body.duration,
+      location: body.location,
+      meeting_link: body.meeting_link,
+      posterImage: body.posterImage || '',
+      fee: body.fee ? Number(body.fee) : undefined,
+      date: body.date,
+      registrationDeadline: body.registrationDeadline,
+      maxParticipants: body.maxParticipants ? Number(body.maxParticipants) : undefined,
+    };
+
+    // Remove undefined values
+    Object.keys(updateCompetitionDto).forEach(key =>
+      updateCompetitionDto[key] === undefined && delete updateCompetitionDto[key]
+    );
+
     let posterImage = updateCompetitionDto.posterImage;
     let documentUrl = updateCompetitionDto.document;
 
@@ -165,7 +177,7 @@ export class CompetitionService implements ICompetitionService {
     if (posterFile && posterFile.buffer) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const fileName = `competitions/${uniqueSuffix}-${posterFile.originalname}`;
-      const uploadResult = await this._awsService.uploadBuffer(posterFile.buffer, fileName, posterFile.mimetype);
+      const uploadResult = await this._storageService.uploadBuffer(posterFile.buffer, fileName, posterFile.mimetype);
       posterImage = uploadResult.Location;
       console.log("Competition image updated to S3:", posterImage);
     }
@@ -173,7 +185,7 @@ export class CompetitionService implements ICompetitionService {
     if (documentFile && documentFile.buffer) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const fileName = `competitions/documents/${uniqueSuffix}-${documentFile.originalname}`;
-      const uploadResult = await this._awsService.uploadBuffer(documentFile.buffer, fileName, documentFile.mimetype);
+      const uploadResult = await this._storageService.uploadBuffer(documentFile.buffer, fileName, documentFile.mimetype);
       documentUrl = uploadResult.Location;
       console.log("Competition document updated to S3:", documentUrl);
     }
@@ -332,7 +344,7 @@ export class CompetitionService implements ICompetitionService {
 
     // Create Razorpay Order
     try {
-      const order = await this._razorpayService.createOrder(
+      const order = await this._paymentService.createOrder(
         competition.fee,
         'INR',
         `ws_${competitionId.slice(-6)}_${Date.now()}`

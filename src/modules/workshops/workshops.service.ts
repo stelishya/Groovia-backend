@@ -3,26 +3,36 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Workshop, WorkshopDocument } from './models/workshop.schema';
 import { CreateWorkshopDto } from './dto/workshop.dto';
-import { AwsS3Service } from '../../common/storage/aws-s3.service';
 import { WorkshopsRepository } from './repositories/workshops.repository';
 
-import { RazorpayService } from '../../common/payments/razorpay/razorpay.service';
 import { type IWorkshopRepo, IWorkshopRepoToken } from './interfaces/workshop.repo.interface';
 import { IWorkshopService } from './interfaces/workshop.service.interface';
+import { type IStorageService, IStorageServiceToken } from 'src/common/storage/interfaces/storage.interface';
+import { type IPaymentService, IPaymentServiceToken } from 'src/common/payments/interfaces/payment.interface';
+import { StorageUtils } from 'src/common/storage/utils/storage.utils';
 
 @Injectable()
 export class WorkshopsService implements IWorkshopService {
     constructor(
         @Inject(IWorkshopRepoToken)
         private readonly _workshopRepository: IWorkshopRepo,
-        private readonly awsS3Service: AwsS3Service,
-        private readonly razorpayService: RazorpayService
+        @Inject(IStorageServiceToken) private readonly awsS3Service: IStorageService,
+        @Inject(IPaymentServiceToken) private readonly razorpayService: IPaymentService
         // @InjectModel(Workshop.name) private workshopModel: Model<WorkshopDocument>,
     ) { }
 
-    async create(createWorkshopDto: CreateWorkshopDto, file: any, instructorId: string): Promise<Workshop> {
+    async create(body: any, file: any, instructorId: string): Promise<Workshop> {
         console.log("Creating workshop with instructorId:", instructorId);
-        console.log("Workshop data:", createWorkshopDto);
+        console.log("Workshop data:", body);
+
+        // Map DTO in service layer
+        const createWorkshopDto: CreateWorkshopDto = {
+            ...body,
+            fee: Number(body.fee),
+            maxParticipants: Number(body.maxParticipants),
+            sessions: typeof body.sessions === 'string' ? JSON.parse(body.sessions) : body.sessions,
+            posterImage: '', // Will be set after S3 upload
+        };
 
         let posterImage = createWorkshopDto.posterImage;
 
@@ -177,12 +187,13 @@ export class WorkshopsService implements IWorkshopService {
 
     async getBookedWorkshops(
         userId: string,
-        search?: string,
-        style?: string,
-        sortBy?: string,
-        page: number = 1,
-        limit: number = 10
+        options: { search?: string; style?: string; sortBy?: string; page?: string; limit?: string }
     ): Promise<{ workshops: Workshop[], total: number, page: number, limit: number, totalPages: number }> {
+        // Parse pagination in service layer
+        const page = options.page ? parseInt(options.page, 10) : 1;
+        const limit = options.limit ? parseInt(options.limit, 10) : 10;
+        const { search, style, sortBy } = options;
+
         const query: any = { 'participants.dancerId': new Types.ObjectId(userId) };
 
         // Build the aggregation pipeline
@@ -276,32 +287,10 @@ export class WorkshopsService implements IWorkshopService {
 
     private async addSignedUrlsToWorkshop(workshop: any): Promise<any> {
         if (workshop.posterImage) {
-            try {
-                // Check if it's already a full URL or just a key
-                if (workshop.posterImage.startsWith('http')) {
-                    // Extract the key from the URL
-                    const url = new URL(workshop.posterImage);
-                    const key = url.pathname.substring(1); // Remove leading '/'
-                    workshop.posterImage = this.awsS3Service.getSignedUrl(key);
-                } else {
-                    workshop.posterImage = this.awsS3Service.getSignedUrl(workshop.posterImage);
-                }
-            } catch (e) {
-                console.error("Error signing poster URL:", e);
-            }
+            workshop.posterImage = await StorageUtils.getSignedUrl(this.awsS3Service, workshop.posterImage);
         }
         if (workshop.instructor?.profileImage) {
-            try {
-                if (workshop.instructor.profileImage.startsWith('http')) {
-                    const url = new URL(workshop.instructor.profileImage);
-                    const key = url.pathname.substring(1);
-                    workshop.instructor.profileImage = this.awsS3Service.getSignedUrl(key);
-                } else {
-                    workshop.instructor.profileImage = this.awsS3Service.getSignedUrl(workshop.instructor.profileImage);
-                }
-            } catch (e) {
-                console.error("Error signing instructor profile URL:", e);
-            }
+            workshop.instructor.profileImage = await StorageUtils.getSignedUrl(this.awsS3Service, workshop.instructor.profileImage);
         }
         return workshop;
     }

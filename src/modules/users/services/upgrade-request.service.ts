@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Inject } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { UpgradeRequest, UpgradeRequestStatus } from '../models/upgrade-request.schema';
@@ -7,7 +7,7 @@ import { IUpgradeRequestService } from '../interfaces/upgrade-request.service.in
 import { NotificationService } from 'src/modules/notifications/services/notification.service';
 import { NotificationType } from 'src/modules/notifications/models/notification.schema';
 import { Role } from 'src/common/enums/role.enum';
-import { RazorpayService } from 'src/common/payments/razorpay/razorpay.service';
+import { type IPaymentService, IPaymentServiceToken } from 'src/common/payments/interfaces/payment.interface';
 
 @Injectable()
 export class UpgradeRequestService implements IUpgradeRequestService {
@@ -16,7 +16,7 @@ export class UpgradeRequestService implements IUpgradeRequestService {
         @InjectModel(User.name)
         private userModel: Model<User>,
         private notificationService: NotificationService,
-        private razorpayService: RazorpayService,
+        @Inject(IPaymentServiceToken) private razorpayService: IPaymentService,
     ) { }
 
     async createRequest(data: any): Promise<UpgradeRequest> {
