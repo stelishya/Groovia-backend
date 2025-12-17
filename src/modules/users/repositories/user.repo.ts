@@ -8,12 +8,12 @@ import { ProjectionType } from 'mongoose';
 import { BaseRepository } from 'src/common/repositories/base.repo';
 
 @Injectable()
-export class UserRepository 
-extends BaseRepository<User, UserDocument> 
-implements IUserRepository {
+export class UserRepository
+    extends BaseRepository<User, UserDocument>
+    implements IUserRepository {
     constructor(@InjectModel(User.name) private readonly _userModel: Model<UserDocument>) {
         super(_userModel)
-     }
+    }
 
     async create(user: Partial<User>): Promise<User> {
         const newUser = new this._userModel(user);
@@ -52,8 +52,8 @@ implements IUserRepository {
             .limit(limit)
             .exec()
     }
-    getAllUsersForAdmin(filter: FilterQuery<User>, skip: number, limit: number): Promise<User[]> {
-        return this._userModel.find(filter).skip(skip).limit(limit).exec();
+    getAllUsersForAdmin(filter: FilterQuery<User>, skip: number, limit: number, sort: any): Promise<User[]> {
+        return this._userModel.find(filter).sort(sort).skip(skip).limit(limit).exec();
     }
     countDocuments(filter?: FilterQuery<User>): Promise<number> {
         return this._userModel.countDocuments(filter).exec();

@@ -54,6 +54,8 @@ export class UsersService implements IUserService {
             limit = '10',
             search,
             role,
+            sortBy,
+            sortOrder
         } = query;
         const filter: FilterQuery<User> = {};
         if (search) {
@@ -62,11 +64,23 @@ export class UsersService implements IUserService {
                 { email: { $regex: search, $options: 'i' } }
             ]
         }
+        if (role) {
+            filter.role = role
+        }
+
+        const sort: any = {};
+        if (sortBy) {
+            sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+        } else {
+            sort.createdAt = -1;
+        }
+
         const total = await this._userRepository.countDocuments(filter);
         const users = await this._userRepository.getAllUsersForAdmin(
             filter,
             (parseInt(page) - 1) * parseInt(limit),
             parseInt(limit),
+            sort,
             { password: 0 }
         )
         return { users, total }

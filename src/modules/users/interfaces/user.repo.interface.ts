@@ -10,18 +10,19 @@ export interface IUserRepository {
     updatePassword(userId: Types.ObjectId, newPasswordHash: string): Promise<boolean>;
 
     getAllUsersForAdmin(
-        filter:FilterQuery<User>,
-        skip:number,
-        limit:number,
-        projection?:ProjectionType<User>,
-    ):Promise<User[]>;
-    countDocuments(filter?:FilterQuery<User>):Promise<number>;
+        filter: FilterQuery<User>,
+        skip: number,
+        limit: number,
+        sort: any,
+        projection?: ProjectionType<User>,
+    ): Promise<User[]>;
+    countDocuments(filter?: FilterQuery<User>): Promise<number>;
     getUsersForAdmin(
-        filter:FilterQuery<User>,
-        skip:number,
-        limit:number,
-        projection?:ProjectionType<User>,
-    ):Promise<User[]>
+        filter: FilterQuery<User>,
+        skip: number,
+        limit: number,
+        projection?: ProjectionType<User>,
+    ): Promise<User[]>
 
     find(filter: FilterQuery<User>, options?: QueryOptions): Promise<User[]>;
     countDocuments(filter?: FilterQuery<User>): Promise<number>;

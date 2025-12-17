@@ -21,13 +21,16 @@ export class Events extends Document {
   @Prop({ required: true })
   budget: string;
 
-  @Prop({ type: String, enum: ['pending', 'accepted', 'rejected','cancelled'], default: 'pending' })
+  @Prop({ type: String, enum: ['pending', 'accepted', 'rejected', 'cancelled','confirmed','completed'], default: 'pending' })
   status: string;
 
-  @Prop({ type: String, enum: ['pending', 'failed', 'completed'], default: 'pending' })
+  @Prop({ type: String, enum: ['pending', 'failed', 'paid'], default: 'pending' })
   paymentStatus: string;
 
-  @Prop({ type: String})
+  @Prop({ type: Number })
+  acceptedAmount?: number;
+
+  @Prop({ type: String })
   eventHistory: object[];
 }
 

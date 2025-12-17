@@ -66,12 +66,6 @@ export class CompetitionService implements ICompetitionService {
       date: new Date(createCompetitionDto.date),
       registrationDeadline: new Date(createCompetitionDto.registrationDeadline),
     };
-
-    let competitionCreationCount = 0
-    competitionCreationCount = competitionCreationCount + 1
-    if (competitionCreationCount > 3) {
-      throw new BadRequestException("Reached maximum competition creation limit.")
-    }
     const createdCompetition = await this._competitionRepository.create(competitionData);
 
     // Convert to plain object and add signed URLs
@@ -79,8 +73,61 @@ export class CompetitionService implements ICompetitionService {
     return this.addSignedUrlsToCompetition(competitionObj);
   }
 
-  async findAll(): Promise<Competition[]> {
-    return this._competitionRepository.findAll();
+  async findAll(options?: {
+    search?: string;
+    sortBy?: string;
+    level?: string;
+    style?: string;
+    category?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: Competition[], total: number, page: number, totalPages: number }> {
+    const query: any = {};
+
+    if (options?.search) {
+      query.$or = [
+        { title: { $regex: options.search, $options: 'i' } },
+        { description: { $regex: options.search, $options: 'i' } },
+      ];
+    }
+
+    if (options?.category) {
+      query.category = options.category;
+    }
+
+    if (options?.style) {
+      query.style = options.style;
+    }
+
+    if (options?.level) {
+      query.level = options.level;
+    }
+
+    let sortOptions: any = { createdAt: -1 }; // Default sort
+    if (options?.sortBy) {
+      const [field, order] = options.sortBy.split(':');
+      if (['fee', 'date'].includes(field)) {
+        sortOptions = { [field]: order === 'desc' ? -1 : 1 };
+      }
+    }
+
+    if (options?.limit) {
+      // Logic for limit if needed directly in query construction, 
+      // but repo handles it via arguments.
+    }
+
+    const page = options?.page || 1;
+    const limit = options?.limit || 10;
+    const skip = (page - 1) * limit;
+
+    const { data, total } = await this._competitionRepository.find(query, sortOptions, skip, limit);
+
+    return {
+      data,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
+    };
   }
 
   async findOne(id: string): Promise<Competition> {
@@ -91,28 +138,57 @@ export class CompetitionService implements ICompetitionService {
     return competition;
   }
 
-  async findByOrganizer(organizerId: string): Promise<Competition[]> {
-    console.log("=== findByOrganizer called ===");
-    const competitions = await this._competitionRepository.findByOrganizer(organizerId);
-    console.log("Raw competitions count:", competitions.length);
+  async findByOrganizer(organizerId: string, options?: {
+    search?: string;
+    sortBy?: string;
+    level?: string;
+    style?: string;
+    category?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: Competition[], total: number, page: number, totalPages: number }> {
+    const { page = 1, limit = 10 } = options || {};
+    const skip = (page - 1) * limit;
 
-    if (competitions.length > 0) {
-      console.log("Sample competition posterImage:", competitions[0].posterImage);
+    const query: any = {};
+    if (options?.search) {
+      query.$or = [
+        { title: { $regex: options.search, $options: 'i' } },
+        { description: { $regex: options.search, $options: 'i' } },
+      ];
+    }
+    if (options?.category) query.category = options.category;
+    if (options?.style) query.style = options.style;
+    if (options?.level) query.level = options.level;
+
+    let sortOptions: any = { createdAt: -1 };
+    if (options?.sortBy) {
+      const [field, order] = options.sortBy.split(':');
+      if (['fee', 'date'].includes(field)) {
+        sortOptions = { [field]: order === 'desc' ? -1 : 1 };
+      }
     }
 
-    // Add signed URLs for S3 images
+    const { data, total } = await this._competitionRepository.findByOrganizer(organizerId, query, sortOptions, skip, limit);
+    const competitionsWithSignedUrls = await this.processCompetitionsWithUrls(data);
+
+    return {
+      data: competitionsWithSignedUrls,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
+    };
+  }
+
+
+  private async processCompetitionsWithUrls(competitions: Competition[]): Promise<Competition[]> {
     const competitionsWithSignedUrls = await Promise.all(
       competitions.map(async (competition) => {
-        const competitionObj = competition.toObject ? competition.toObject() : competition;
+        const competitionObj = competition['toObject'] ? competition['toObject']() : competition;
         return this.addSignedUrlsToCompetition(competitionObj);
       })
     );
-
-    if (competitionsWithSignedUrls.length > 0) {
-      console.log("After signed URL - posterImage:", competitionsWithSignedUrls[0].posterImage);
-    }
-
-    return competitionsWithSignedUrls as Competition[];
+    return competitionsWithSignedUrls;
   }
 
   private async addSignedUrlsToCompetition(competition: any): Promise<any> {
@@ -128,6 +204,18 @@ export class CompetitionService implements ICompetitionService {
     // Handle document if populated
     if (competition.document) {
       competition.document = await StorageUtils.getSignedUrl(this._storageService, competition.document);
+    }
+
+    // Handle registered dancers' profile images if populated
+    if (competition.registeredDancers && Array.isArray(competition.registeredDancers)) {
+      competition.registeredDancers = await Promise.all(
+        competition.registeredDancers.map(async (dancer: any) => {
+          if (dancer.dancerId?.profileImage) {
+            dancer.dancerId.profileImage = await StorageUtils.getSignedUrl(this._storageService, dancer.dancerId.profileImage);
+          }
+          return dancer;
+        })
+      );
     }
 
     return competition;
@@ -303,18 +391,45 @@ export class CompetitionService implements ICompetitionService {
     return updatedCompetition;
   }
 
-  async findRegisteredCompetitions(dancerId: string): Promise<Competition[]> {
-    const competitions = await this._competitionRepository.findRegisteredCompetitions(dancerId);
+  async findRegisteredCompetitions(dancerId: string, options?: {
+    search?: string;
+    sortBy?: string;
+    level?: string;
+    style?: string;
+    category?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: Competition[], total: number, page: number, totalPages: number }> {
+    const { page = 1, limit = 10 } = options || {};
+    const skip = (page - 1) * limit;
 
-    // Add signed URLs for S3 images
-    const competitionsWithSignedUrls = await Promise.all(
-      competitions.map(async (competition) => {
-        const competitionObj = competition.toObject ? competition.toObject() : competition;
-        return this.addSignedUrlsToCompetition(competitionObj);
-      })
-    );
+    const query: any = {};
+    if (options?.search) {
+      query.$or = [
+        { title: { $regex: options.search, $options: 'i' } },
+        { description: { $regex: options.search, $options: 'i' } },
+      ];
+    }
+    if (options?.category) query.category = options.category;
+    if (options?.style) query.style = options.style;
+    if (options?.level) query.level = options.level;
 
-    return competitionsWithSignedUrls as Competition[];
+    let sortOptions: any = { createdAt: -1 };
+    if (options?.sortBy) {
+      const [field, order] = options.sortBy.split(':');
+      if (['fee', 'date'].includes(field)) {
+        sortOptions = { [field]: order === 'desc' ? -1 : 1 };
+      }
+    }
+
+    const { data, total } = await this._competitionRepository.findRegisteredCompetitions(dancerId, query, sortOptions, skip, limit);
+    const competitionsWithSignedUrls = await this.processCompetitionsWithUrls(data);
+    return {
+      data: competitionsWithSignedUrls,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
+    };
   }
   async initiatePayment(competitionId: string, dancerId: string, amount: number, currency: string) {
     const competition = await this._competitionRepository.findById(competitionId)

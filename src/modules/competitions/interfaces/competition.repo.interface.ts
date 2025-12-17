@@ -9,12 +9,13 @@ export interface ICompetitionRepo {
     delete(id: string): Promise<void>;
     findById(id: string): Promise<Competition | null>;
     findAll(): Promise<Competition[]>;
+    find(query: any, sort?: any, skip?: number, limit?: number): Promise<{ data: Competition[], total: number }>;
 
     // Custom Queries
     findByIdPublic(id: string): Promise<Competition | null>;
-    findByOrganizer(organizerId: string): Promise<Competition[]>;
+    findByOrganizer(organizerId: string, query?: any, sort?: any, skip?: number, limit?: number): Promise<{ data: Competition[], total: number }>;
     findActiveCompetitions(): Promise<Competition[]>;
     findByCategory(category: string): Promise<Competition[]>;
     findByStyle(style: string): Promise<Competition[]>;
-    findRegisteredCompetitions(dancerId: string): Promise<Competition[]>;
+    findRegisteredCompetitions(dancerId: string, query?: any, sort?: any, skip?: number, limit?: number): Promise<{ data: Competition[], total: number }>;
 }

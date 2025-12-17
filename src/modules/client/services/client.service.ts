@@ -8,6 +8,9 @@ import { CreateRequestDto, updateBookingStatusDto, UpdateClientProfileDto } from
 import { NotificationType } from '../../notifications/models/notification.schema';
 import { NotificationService } from '../../notifications/services/notification.service';
 import { type IStorageService, IStorageServiceToken } from 'src/common/storage/interfaces/storage.interface';
+import { type IPaymentService, IPaymentServiceToken } from 'src/common/payments/interfaces/payment.interface';
+import { ConfigService } from '@nestjs/config';
+import { IClientService } from '../interfaces/client.interface';
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 interface LeanEvent extends Omit<Events, '_id' | 'clientId' | 'dancerId'> {
@@ -27,15 +30,18 @@ interface PopulatedEvent extends Omit<Events, 'clientId' | 'dancerId'> {
 type SavedEvent = Events & { _id: Types.ObjectId };
 
 @Injectable()
-export class ClientService {
+export class ClientService implements IClientService {
     constructor(
         @InjectModel(Events.name) private readonly _eventModel: Model<Events>,
         @Inject(IUserServiceToken)
-        private readonly userService: IUserService,
+        private readonly _userService: IUserService,
         @Inject(forwardRef(() => NotificationService))
-        private readonly notificationService: NotificationService,
+        private readonly _notificationService: NotificationService,
         @Inject(IStorageServiceToken)
-        private readonly storageService: IStorageService,
+        private readonly _storageService: IStorageService,
+        @Inject(IPaymentServiceToken)
+        private readonly _paymentService: IPaymentService,
+        private readonly _configService: ConfigService,
     ) { }
 
     async uploadProfilePicture(userId: string, file: Express.Multer.File): Promise<{ user: User; imageUrl: string }> {
@@ -43,7 +49,7 @@ export class ClientService {
         const fileName = `profiles/${userObjectId}-${Date.now()}-${file.originalname}`;
 
         // Upload to S3
-        const result = await this.storageService.uploadBuffer(
+        const result = await this._storageService.uploadBuffer(
             file.buffer,
             fileName,
             file.mimetype
@@ -61,11 +67,104 @@ export class ClientService {
     }
 
     async getProfileByUserId(userId: string): Promise<User> {
-        const user = await this.userService.findById(userId);
+        const user = await this._userService.findById(userId);
         if (!user) {
             throw new NotFoundException('User not found');
         }
         return user;
+    }
+
+    async findOne(id: string): Promise<Events> {
+        const event = await this._eventModel.findById(id).populate('dancerId').populate('clientId');
+        if (!event) {
+            throw new NotFoundException('Event Request not found');
+        }
+        return event;
+    }
+
+    async createEventBookingPayment(eventId: string, userId: string) {
+        const event = await this._eventModel.findById(eventId);
+        if (!event) {
+            throw new NotFoundException('Event not found');
+        }
+
+        if (event.clientId.toString() !== userId) {
+            throw new Error('Unauthorized access to event');
+        }
+
+        if (event.status !== 'accepted') {
+            throw new Error('Event request is not in accepted status');
+        }
+
+        const amount = event.acceptedAmount;
+        if (!amount) {
+            throw new Error('No accepted amount found for this event');
+        }
+
+        const order = await this._paymentService.createOrder(amount, 'INR', (event as any)._id.toString());
+
+        return {
+            ...order,
+            key_id: this._configService.get('RAZORPAY_KEY_ID'),
+            amount: amount,
+            currency: 'INR',
+            name: 'Groovia Event Booking',
+            description: `Payment for event: ${event.event}`,
+            prefill: {
+                name: 'Client Name', // You might want to get this from user service
+                email: 'client@example.com', // You might want to get this from user service
+                contact: ''
+            },
+            notes: {
+                eventId: (event as any)._id.toString(),
+                type: 'event_booking'
+            }
+        };
+    }
+
+    async verifyEventBookingPayment(eventId: string, paymentDetails: {
+        razorpay_order_id: string;
+        razorpay_payment_id: string;
+        razorpay_signature: string;
+    }) {
+        const isValid = await this._paymentService.verifyPayment(
+            paymentDetails.razorpay_order_id,
+            paymentDetails.razorpay_payment_id,
+            paymentDetails.razorpay_signature
+        );
+        console.log("isValid verifyEventBookingPayment", isValid)
+        if (!isValid) {
+            throw new Error('Invalid payment signature');
+        }
+
+        const updatedEvent = await this._eventModel.findByIdAndUpdate(
+            eventId,
+            {
+                paymentStatus: 'paid',
+                status: 'confirmed'
+            },
+            { new: true }
+        );
+        console.log("updatedEvent verifyEventBookingPayment", updatedEvent)
+        return updatedEvent;
+    }
+
+    async markPaymentFailed(eventId: string, userId: string) {
+        const updatedEvent = await this._eventModel.findOneAndUpdate(
+            { _id: eventId, paymentStatus: { $ne: 'failed' } },
+            {
+                paymentStatus: 'failed'
+            },
+            { new: true }
+        );
+
+        if (!updatedEvent) {
+            // Return current state if no update occurred (likely already failed)
+            return this._eventModel.findById(eventId);
+        }
+
+        console.log("updatedEvent markPaymentFailed", updatedEvent)
+        return updatedEvent;
     }
 
     async getAllDancers(options: {
@@ -99,17 +198,17 @@ export class ClientService {
         } else if (sortBy === 'name') {
             sortOptions.username = 1; // ascending order (A-Z)
         }
-        const dancers = await this.userService.find(query, {
+        const dancers = await this._userService.find(query, {
             sort: sortOptions,
             skip: (page - 1) * limit,
             limit: limit
         });
-        const total = await this.userService.count(query);
+        const total = await this._userService.count(query);
         return { dancers, total };
     }
 
     async getDancerProfile(dancerId: string): Promise<User> {
-        const dancer = await this.userService.findById(dancerId);
+        const dancer = await this._userService.findById(dancerId);
         if (!dancer) {
             throw new NotFoundException('Dancer not found');
         }
@@ -125,13 +224,13 @@ export class ClientService {
         const savedRequest = await newRequest.save() as unknown as SavedEvent;
 
         // Get client details for notification
-        const client = await this.userService.findById(clientId);
+        const client = await this._userService.findById(clientId);
         if (!client) {
             throw new NotFoundException('Client not found');
         }
 
         // Create notification for dancer
-        await this.notificationService.createNotification(
+        await this._notificationService.createNotification(
             new Types.ObjectId(createRequestDto.dancerId),
             NotificationType.EVENT_REQUEST_RECEIVED,
             'New Event Request',
@@ -204,9 +303,14 @@ export class ClientService {
         // event.status = statusDto.status;
         // const updatedEvent = await event.save();
 
+        const updateData: any = { status: statusDto.status };
+        if (statusDto.status === 'accepted' && statusDto.amount) {
+            updateData.acceptedAmount = statusDto.amount;
+        }
+
         const updatedEvent = await this._eventModel.findByIdAndUpdate(
             eventId,
-            { status: statusDto.status },
+            updateData,
             { new: true, lean: true }
         ).exec() as unknown as LeanEvent;
 
@@ -262,7 +366,7 @@ export class ClientService {
         }
 
         // Create and send notification
-        await this.notificationService.createNotification(
+        await this._notificationService.createNotification(
             new Types.ObjectId(recipientId),
             notificationType,
             title,
@@ -281,14 +385,14 @@ export class ClientService {
     }
 
     async updateClientProfile(userId: string, updateData: UpdateClientProfileDto): Promise<User> {
-        const user = await this.userService.findById(userId);
+        const user = await this._userService.findById(userId);
         if (!user) {
             throw new NotFoundException('User not found');
         }
 
         // Check if username is being changed and if it's already taken
         if (updateData.username && updateData.username !== user.username) {
-            const existingUser = await this.userService.findByUsername(updateData.username);
+            const existingUser = await this._userService.findByUsername(updateData.username);
             if (existingUser) {
                 throw new NotFoundException('Username already taken');
             }
@@ -296,14 +400,14 @@ export class ClientService {
 
         // Check if email is being changed and if it's already taken
         if (updateData.email && updateData.email !== user.email) {
-            const existingUser = await this.userService.findByEmail(updateData.email);
+            const existingUser = await this._userService.findByEmail(updateData.email);
             if (existingUser) {
                 throw new NotFoundException('Email already in use');
             }
         }
 
         // Update only provided fields
-        const updatedUser = await this.userService.updateOne(
+        const updatedUser = await this._userService.updateOne(
             { _id: user._id },
             { $set: updateData }
         );

@@ -12,12 +12,37 @@ export interface ICompetitionService {
 
     // Retrieval with Logic (e.g., signing URLs)
     findOne(id: string): Promise<Competition>;
-    findAll(): Promise<Competition[]>;
-    findByOrganizer(organizerId: string): Promise<Competition[]>;
+    findAll(options?: {
+        search?: string;
+        sortBy?: string;
+        level?: string;
+        style?: string;
+        category?: string;
+        page?: number;
+        limit?: number;
+    }): Promise<{ data: Competition[], total: number, page: number, totalPages: number }>;
+
+    findByOrganizer(organizerId: string, options?: {
+        search?: string;
+        sortBy?: string;
+        level?: string;
+        style?: string;
+        category?: string;
+        page?: number;
+        limit?: number;
+    }): Promise<{ data: Competition[], total: number, page: number, totalPages: number }>;
     findActiveCompetitions(): Promise<Competition[]>;
     findByCategory(category: string): Promise<Competition[]>;
     findByStyle(style: string): Promise<Competition[]>;
-    findRegisteredCompetitions(dancerId: string): Promise<Competition[]>;
+    findRegisteredCompetitions(dancerId: string, options?: {
+        search?: string;
+        sortBy?: string;
+        level?: string;
+        style?: string;
+        category?: string;
+        page?: number;
+        limit?: number;
+    }): Promise<{ data: Competition[], total: number, page: number, totalPages: number }>;
 
     // Specialized Logic
     registerDancer(competitionId: string, dancerId: string, paymentStatus?: string): Promise<Competition>;

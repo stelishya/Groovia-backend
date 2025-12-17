@@ -53,14 +53,16 @@ export class CompetitionController {
   }
 
   @Get()
-  findAll(@Query('category') category?: string, @Query('style') style?: string) {
-    if (category) {
-      return this._competitionService.findByCategory(category);
-    }
-    if (style) {
-      return this._competitionService.findByStyle(style);
-    }
-    return this._competitionService.findAll();
+  findAll(
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('level') level?: string,
+    @Query('style') style?: string,
+    @Query('category') category?: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this._competitionService.findAll({ search, sortBy, level, style, category, page, limit });
   }
 
   @Get('active')
@@ -70,15 +72,33 @@ export class CompetitionController {
 
   @Get('my-competitions')
   @Roles(Role.ORGANIZER)
-  findMyCompetitions(@Request() req) {
+  findMyCompetitions(
+    @Request() req,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('level') level?: string,
+    @Query('style') style?: string,
+    @Query('category') category?: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
     console.log("organizer nte id:", req.user.userId);
-    return this._competitionService.findByOrganizer(req.user.userId);
+    return this._competitionService.findByOrganizer(req.user.userId, { search, sortBy, level, style, category, page, limit });
   }
 
   @Get('my-registrations')
   @Roles(Role.DANCER)
-  findMyRegistrations(@ActiveUser('userId') userId: string) {
-    return this._competitionService.findRegisteredCompetitions(userId);
+  findMyRegistrations(
+    @ActiveUser('userId') userId: string,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('level') level?: string,
+    @Query('style') style?: string,
+    @Query('category') category?: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ) {
+    return this._competitionService.findRegisteredCompetitions(userId, { search, sortBy, level, style, category, page, limit });
   }
 
   @Get(':id')

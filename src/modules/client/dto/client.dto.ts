@@ -48,10 +48,14 @@ export class CreateRequestDto {
   budget: string;
 }
 
-export class updateBookingStatusDto{
+export class updateBookingStatusDto {
   @IsString()
   @IsNotEmpty()
   status: string;
+
+  @IsOptional()
+  // @IsNumber() // Ensure you import IsNumber if you want validation
+  amount?: number;
 }
 
 export class UpdateClientProfileDto {
@@ -64,7 +68,7 @@ export class UpdateClientProfileDto {
   @IsOptional()
   email?: string;
 
-  @ApiPropertyOptional({example:"1234567890"})
+  @ApiPropertyOptional({ example: "1234567890" })
   @IsString()
   @IsOptional()
   phone?: string;

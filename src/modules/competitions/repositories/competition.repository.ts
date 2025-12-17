@@ -24,6 +24,17 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
     return this.competitionModel.find().populate('organizer_id', 'username profileImage').exec();
   }
 
+  async find(query: any, sort?: any, skip?: number, limit?: number): Promise<{ data: Competition[], total: number }> {
+    const total = await this.competitionModel.countDocuments(query);
+    const data = await this.competitionModel.find(query)
+      .sort(sort || { createdAt: -1 })
+      .skip(skip || 0)
+      .limit(limit || 0)
+      .populate('organizer_id', 'username profileImage')
+      .exec();
+    return { data, total };
+  }
+
   async update(id: string, data: Partial<Competition>): Promise<Competition | null> {
     const updatedCompetition = await this.competitionModel.findByIdAndUpdate(id, data, { new: true }).exec();
     console.log("hello update competition", updatedCompetition)
@@ -42,12 +53,18 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
   }
 
   // Add any competition-specific repository methods here
-  async findByOrganizer(organizerId: string): Promise<Competition[]> {
-    return this.competitionModel
-      .find({ organizer_id: new Types.ObjectId(organizerId) })
+  async findByOrganizer(organizerId: string, query: any = {}, sort: any = { createdAt: -1 }, skip?: number, limit?: number): Promise<{ data: Competition[], total: number }> {
+    const finalQuery = { organizer_id: new Types.ObjectId(organizerId), ...query };
+    const total = await this.competitionModel.countDocuments(finalQuery);
+    const data = await this.competitionModel
+      .find(finalQuery)
       .populate('organizer_id', 'username profileImage')
-      .sort({ createdAt: -1 })
+      .populate('registeredDancers.dancerId', 'username email profileImage role availableForPrograms')
+      .sort(sort)
+      .skip(skip || 0)
+      .limit(limit || 0)
       .exec();
+    return { data, total };
   }
 
   async findActiveCompetitions(): Promise<Competition[]> {
@@ -77,13 +94,17 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
       .exec();
   }
 
-  async findRegisteredCompetitions(dancerId: string): Promise<Competition[]> {
-    const result = await this.competitionModel
-      .find({ 'registeredDancers.dancerId': new Types.ObjectId(dancerId) })
+  async findRegisteredCompetitions(dancerId: string, query: any = {}, sort: any = { createdAt: -1 }, skip?: number, limit?: number): Promise<{ data: Competition[], total: number }> {
+    const finalQuery = { 'registeredDancers.dancerId': new Types.ObjectId(dancerId), ...query };
+    const total = await this.competitionModel.countDocuments(finalQuery);
+    const data = await this.competitionModel
+      .find(finalQuery)
       .populate('organizer_id', 'username profileImage')
-      .sort({ date: 1 })
+      .sort(sort)
+      .skip(skip || 0)
+      .limit(limit || 0)
       .exec();
-    console.log("registeredCompetitions in comp repo, result : ", result)
-    return result;
+    console.log("registeredCompetitions in comp repo, result : ", data)
+    return { data, total };
   }
 }

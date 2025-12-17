@@ -25,6 +25,7 @@ export enum CompetitionStatus {
   CANCELLED = 'cancelled',
 }
 
+@Schema({ _id: false })
 export class RegisteredDancer {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   dancerId: Types.ObjectId;
@@ -37,7 +38,12 @@ export class RegisteredDancer {
 
   @Prop({ type: Date, default: Date.now })
   registeredAt: Date;
+
+  @Prop({ type: Boolean, default: false })
+  attendance?: boolean;
 }
+
+const RegisteredDancerSchema = SchemaFactory.createForClass(RegisteredDancer);
 
 @Schema({ timestamps: true })
 export class Competition extends Document {
@@ -95,7 +101,7 @@ export class Competition extends Document {
   @Prop({ type: String, enum: CompetitionStatus, default: CompetitionStatus.ACTIVE })
   status: CompetitionStatus;
 
-  @Prop({ type: [RegisteredDancer], default: [] })
+  @Prop({ type: [RegisteredDancerSchema], default: [] })
   registeredDancers: RegisteredDancer[];
 
   @Prop({ type: Object }) // Flexible object for results structure

@@ -1,14 +1,16 @@
 
 
-export interface GetAllUsersQueryDto{
+export interface GetAllUsersQueryDto {
     role: string;
     gender?: string;
     search?: string;
-    page?:string;
-    limit?:string;
+    page?: string;
+    limit?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
 }
 
-export interface DashboardResponseDto{
+export interface DashboardResponseDto {
     totalUsers: number;
     totalDancers: number;
     totalInstructors: number;

@@ -1,8 +1,9 @@
-import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Query, Req, UseGuards, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, Query, Req, UseGuards, UseInterceptors, UploadedFile, BadRequestException, Request } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Public } from 'src/common/decorators/public.decorator';
 import { CreateRequestDto, updateBookingStatusDto, UpdateClientProfileDto } from '../dto/client.dto';
 import { ClientService } from '../services/client.service';
+import { IClientInterfaceToken, type IClientService } from '../interfaces/client.interface';
 import { ActiveUser } from 'src/common/decorators/active-user.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwtAuth.guard';
 import { MESSAGES } from 'src/common/constants/constants';
@@ -20,7 +21,7 @@ interface AuthRequest extends Request {
 @Controller('clients')
 export class ClientController {
     constructor(
-        private readonly _clientService: ClientService
+        @Inject(IClientInterfaceToken) private readonly _clientService: IClientService
     ) { }
 
     @UseGuards(JwtAuthGuard)
@@ -143,4 +144,43 @@ export class ClientController {
         const updatedRequest = await this._clientService.updateEventRequestStatus(eventId, statusDto);
         return ApiResponse.success({ message: MESSAGES.BOOKING_STATUS_UPDATED_SUCCESSFULLY, request: updatedRequest });
     }
+
+    @Get('events/:id')
+    findOne(@Param('id') id: string) {
+        return this._clientService.findOne(id);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('event-requests/:id/payment')
+    @HttpCode(HttpStatus.OK)
+    async createEventBookingPayment(
+        @Param('id') eventId: string,
+        @ActiveUser('userId') userId: string,
+    ) {
+        const paymentOrder = await this._clientService.createEventBookingPayment(eventId, userId);
+        return ApiResponse.success({ message: 'Payment Initiated', order: paymentOrder });
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('event-requests/:id/verify-payment')
+    @HttpCode(HttpStatus.OK)
+    async verifyEventBookingPayment(
+        @Param('id') eventId: string,
+        @Body() paymentDetails: {
+            razorpay_order_id: string;
+            razorpay_payment_id: string;
+            razorpay_signature: string;
+        },
+    ) {
+        const updatedEvent = await this._clientService.verifyEventBookingPayment(eventId, paymentDetails);
+        return ApiResponse.success({ message: 'Payment Verified', event: updatedEvent });
+    }
+
+    @Post('events/:id/mark-payment-failed')
+      @UseGuards(JwtAuthGuard)
+      async markFailedPayment(@Param('id') id: string, @Request() req) {
+        console.log('markPaymentFailed called with:', id);
+        await this._clientService.markPaymentFailed(id, req.user.userId);
+        return { success: true, message: 'Payment marked as failed' };
+      }
 }
