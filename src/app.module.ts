@@ -18,6 +18,7 @@ import { RazorpayModule } from './common/payments/razorpay/razorpay.module';
 import { WorkshopsModule } from './modules/workshops/workshops.module';
 import { CompetitionModule } from './modules/competitions/competition.module';
 import { VideoCallsModule } from './modules/video_calls/video-calls.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { VideoCallsModule } from './modules/video_calls/video-calls.module';
     WorkshopsModule,
     CompetitionModule,
     VideoCallsModule,
+    PaymentsModule,
   ],
   providers: [AppService],
   controllers: [AppController],

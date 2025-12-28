@@ -8,6 +8,8 @@ import { NotificationService } from 'src/modules/notifications/services/notifica
 import { NotificationType } from 'src/modules/notifications/models/notification.schema';
 import { Role } from 'src/common/enums/role.enum';
 import { type IPaymentService, IPaymentServiceToken } from 'src/common/payments/interfaces/payment.interface';
+import { IPaymentsServiceToken, PaymentStatus, PaymentType } from '../../payments/interfaces/payments.service.interface';
+import type { IPaymentsService } from '../../payments/interfaces/payments.service.interface';
 
 @Injectable()
 export class UpgradeRequestService implements IUpgradeRequestService {
@@ -17,6 +19,7 @@ export class UpgradeRequestService implements IUpgradeRequestService {
         private userModel: Model<User>,
         private notificationService: NotificationService,
         @Inject(IPaymentServiceToken) private razorpayService: IPaymentService,
+        @Inject(IPaymentsServiceToken) private paymentsService: IPaymentsService,
     ) { }
 
     async createRequest(data: any): Promise<UpgradeRequest> {
@@ -249,6 +252,18 @@ export class UpgradeRequestService implements IUpgradeRequestService {
             'Your role upgrade is completed. Enjoy the new features!'
         );
 
+        // Record payment history
+        await this.paymentsService.createRecord({
+            userId: user._id.toString(),
+            amount,
+            paymentType: PaymentType.ROLE_UPGRADE,
+            status: PaymentStatus.SUCCESS,
+            referenceId: upgradeRequestId,
+            transactionId: paymentId,
+            orderId: razorpayOrderId,
+            description: `Role upgrade to ${roleToAssign}`
+        });
+
         return { success: true };
     }
 
@@ -291,6 +306,16 @@ export class UpgradeRequestService implements IUpgradeRequestService {
 
         request.paymentStatus = 'failed';
         await request.save();
+
+        // Record failed payment
+        await this.paymentsService.createRecord({
+            userId,
+            amount: 0, // Amount might not be known here, but normally role upgrades have fixed fees
+            paymentType: PaymentType.ROLE_UPGRADE,
+            status: PaymentStatus.FAILED,
+            referenceId: requestId,
+            description: `Failed payment for role upgrade`
+        });
 
         return { message: 'Payment failed', request };
     }

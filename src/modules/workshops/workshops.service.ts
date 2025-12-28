@@ -9,6 +9,8 @@ import { type IWorkshopRepo, IWorkshopRepoToken } from './interfaces/workshop.re
 import { IWorkshopService } from './interfaces/workshop.service.interface';
 import { type IStorageService, IStorageServiceToken } from 'src/common/storage/interfaces/storage.interface';
 import { type IPaymentService, IPaymentServiceToken } from 'src/common/payments/interfaces/payment.interface';
+import { IPaymentsServiceToken, PaymentStatus, PaymentType } from '../payments/interfaces/payments.service.interface';
+import type { IPaymentsService } from '../payments/interfaces/payments.service.interface';
 import { StorageUtils } from 'src/common/storage/utils/storage.utils';
 
 @Injectable()
@@ -17,8 +19,8 @@ export class WorkshopsService implements IWorkshopService {
         @Inject(IWorkshopRepoToken)
         private readonly _workshopRepository: IWorkshopRepo,
         @Inject(IStorageServiceToken) private readonly awsS3Service: IStorageService,
-        @Inject(IPaymentServiceToken) private readonly razorpayService: IPaymentService
-        // @InjectModel(Workshop.name) private workshopModel: Model<WorkshopDocument>,
+        @Inject(IPaymentServiceToken) private readonly razorpayService: IPaymentService,
+        @Inject(IPaymentsServiceToken) private readonly paymentsService: IPaymentsService
     ) { }
 
     async create(body: any, file: any, instructorId: string): Promise<Workshop> {
@@ -174,6 +176,18 @@ export class WorkshopsService implements IWorkshopService {
         }
 
         await this._workshopRepository.save(workshop);
+
+        // Record payment history
+        await this.paymentsService.createRecord({
+            userId,
+            amount: workshop.fee,
+            paymentType: PaymentType.WORKSHOP,
+            status: PaymentStatus.SUCCESS,
+            referenceId: workshopId,
+            transactionId: paymentId,
+            orderId: orderId,
+            description: `Registration for workshop: ${workshop.title}`
+        });
 
         // TODO: Create a booking record in a separate Bookings collection if needed
         // TODO: Send confirmation email
@@ -370,5 +384,15 @@ export class WorkshopsService implements IWorkshopService {
         }
         console.log("workshop in markPaymentFailed", workshop);
         await this._workshopRepository.save(workshop);
+
+        // Record failed payment
+        await this.paymentsService.createRecord({
+            userId,
+            amount: workshop.fee,
+            paymentType: PaymentType.WORKSHOP,
+            status: PaymentStatus.FAILED,
+            referenceId: workshopId,
+            description: `Failed registration for workshop: ${workshop.title}`
+        });
     }
 }

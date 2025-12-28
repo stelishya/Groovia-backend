@@ -6,6 +6,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Events, EventSchema } from './models/events.schema';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { RazorpayModule } from 'src/common/payments/razorpay/razorpay.module';
+import { PaymentsModule } from '../payments/payments.module';
 
 import { IClientInterfaceToken } from './interfaces/client.interface';
 
@@ -14,7 +15,8 @@ import { IClientInterfaceToken } from './interfaces/client.interface';
     UsersModule,
     NotificationsModule,
     MongooseModule.forFeature([{ name: Events.name, schema: EventSchema }]),
-    RazorpayModule
+    RazorpayModule,
+    PaymentsModule
   ],
   controllers: [ClientController],
   providers: [{

@@ -8,6 +8,8 @@ import { type ICompetitionRepo, ICompetitionRepoToken } from '../interfaces/comp
 import { ICompetitionService } from '../interfaces/competition.service.interface';
 import { type IStorageService, IStorageServiceToken } from 'src/common/storage/interfaces/storage.interface';
 import { type IPaymentService, IPaymentServiceToken } from 'src/common/payments/interfaces/payment.interface';
+import { IPaymentsServiceToken, PaymentStatus, PaymentType } from '../../payments/interfaces/payments.service.interface';
+import type { IPaymentsService } from '../../payments/interfaces/payments.service.interface';
 import { StorageUtils } from 'src/common/storage/utils/storage.utils';
 
 @Injectable()
@@ -16,7 +18,9 @@ export class CompetitionService implements ICompetitionService {
     @Inject(ICompetitionRepoToken)
     private readonly _competitionRepository: ICompetitionRepo,
     @Inject(IStorageServiceToken) private readonly _storageService: IStorageService,
-    @Inject(IPaymentServiceToken) private readonly _paymentService: IPaymentService) { }
+    @Inject(IPaymentServiceToken) private readonly _paymentService: IPaymentService,
+    @Inject(IPaymentsServiceToken) private readonly _paymentsService: IPaymentsService
+  ) { }
 
   async create(body: any, organizerId: string, posterFile?: any, documentFile?: any): Promise<Competition> {
     // Map DTO in service layer
@@ -510,6 +514,18 @@ export class CompetitionService implements ICompetitionService {
 
     await this._competitionRepository.update(competitionId, competition);
 
+    // Record payment history
+    await this._paymentsService.createRecord({
+      userId: dancerId,
+      amount: competition.fee,
+      paymentType: PaymentType.COMPETITION,
+      status: PaymentStatus.SUCCESS,
+      referenceId: competitionId,
+      transactionId: paymentId,
+      orderId: orderId,
+      description: `Registration for competition: ${competition.title}`
+    });
+
     // Send confirmation email
 
     return {
@@ -548,5 +564,15 @@ export class CompetitionService implements ICompetitionService {
     }
     console.log("competition in markPaymentFailed", competition);
     await this._competitionRepository.update(competitionId, competition);
+
+    // Record failed payment
+    await this._paymentsService.createRecord({
+      userId,
+      amount: competition.fee,
+      paymentType: PaymentType.COMPETITION,
+      status: PaymentStatus.FAILED,
+      referenceId: competitionId,
+      description: `Failed registration for competition: ${competition.title}`
+    });
   }
 }

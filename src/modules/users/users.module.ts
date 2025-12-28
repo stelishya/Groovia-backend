@@ -12,6 +12,7 @@ import { UpgradeRequestService } from './services/upgrade-request.service';
 import { IUpgradeRequestServiceToken } from './interfaces/upgrade-request.service.interface';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { RazorpayModule } from 'src/common/payments/razorpay/razorpay.module';
+import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
   imports: [
@@ -20,7 +21,8 @@ import { RazorpayModule } from 'src/common/payments/razorpay/razorpay.module';
       { name: UpgradeRequest.name, schema: upgradeRequestSchema }
     ]),
     NotificationsModule,
-    RazorpayModule
+    RazorpayModule,
+    PaymentsModule
   ],
   controllers: [UpgradeRequestController],
   providers: [

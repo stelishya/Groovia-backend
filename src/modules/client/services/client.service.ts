@@ -9,6 +9,8 @@ import { NotificationType } from '../../notifications/models/notification.schema
 import { NotificationService } from '../../notifications/services/notification.service';
 import { type IStorageService, IStorageServiceToken } from 'src/common/storage/interfaces/storage.interface';
 import { type IPaymentService, IPaymentServiceToken } from 'src/common/payments/interfaces/payment.interface';
+import { IPaymentsServiceToken, PaymentStatus, PaymentType } from '../../payments/interfaces/payments.service.interface';
+import type { IPaymentsService } from '../../payments/interfaces/payments.service.interface';
 import { ConfigService } from '@nestjs/config';
 import { IClientService } from '../interfaces/client.interface';
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -41,6 +43,8 @@ export class ClientService implements IClientService {
         private readonly _storageService: IStorageService,
         @Inject(IPaymentServiceToken)
         private readonly _paymentService: IPaymentService,
+        @Inject(IPaymentsServiceToken)
+        private readonly _paymentsService: IPaymentsService,
         private readonly _configService: ConfigService,
     ) { }
 
@@ -145,7 +149,24 @@ export class ClientService implements IClientService {
             },
             { new: true }
         );
+        if (!updatedEvent) {
+            throw new NotFoundException('Event not found');
+        }
+
         console.log("updatedEvent verifyEventBookingPayment", updatedEvent)
+
+        // Record payment history
+        await this._paymentsService.createRecord({
+            userId: updatedEvent.clientId.toString(),
+            amount: updatedEvent.acceptedAmount || 0,
+            paymentType: PaymentType.EVENT_BOOKING,
+            status: PaymentStatus.SUCCESS,
+            referenceId: eventId,
+            transactionId: paymentDetails.razorpay_payment_id,
+            orderId: paymentDetails.razorpay_order_id,
+            description: `Payment for event booking: ${updatedEvent.event}`
+        });
+
         return updatedEvent;
     }
 
@@ -164,6 +185,17 @@ export class ClientService implements IClientService {
         }
 
         console.log("updatedEvent markPaymentFailed", updatedEvent)
+
+        // Record failed payment
+        await this._paymentsService.createRecord({
+            userId,
+            amount: updatedEvent.acceptedAmount || 0,
+            paymentType: PaymentType.EVENT_BOOKING,
+            status: PaymentStatus.FAILED,
+            referenceId: eventId,
+            description: `Failed payment for event booking: ${updatedEvent.event}`
+        });
+
         return updatedEvent;
     }
 
