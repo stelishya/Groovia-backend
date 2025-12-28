@@ -317,9 +317,9 @@ export class WorkshopsService implements IWorkshopService {
         }
 
         // Check if registration deadline has passed
-        if (new Date() > new Date(workshop.deadline)) {
-            throw new BadRequestException('Registration deadline has passed');
-        }
+        // if (new Date() > new Date(workshop.deadline)) {
+        //     throw new BadRequestException('Registration deadline has passed');
+        // }
 
         // Create Razorpay Order
         try {

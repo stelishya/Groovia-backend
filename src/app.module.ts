@@ -17,6 +17,7 @@ import { StorageModule } from './common/storage/storage.module';
 import { RazorpayModule } from './common/payments/razorpay/razorpay.module';
 import { WorkshopsModule } from './modules/workshops/workshops.module';
 import { CompetitionModule } from './modules/competitions/competition.module';
+import { VideoCallsModule } from './modules/video_calls/video-calls.module';
 
 @Module({
   imports: [
@@ -64,7 +65,8 @@ import { CompetitionModule } from './modules/competitions/competition.module';
     StorageModule,
     RazorpayModule,
     WorkshopsModule,
-    CompetitionModule
+    CompetitionModule,
+    VideoCallsModule,
   ],
   providers: [AppService],
   controllers: [AppController],

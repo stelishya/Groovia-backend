@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import { AttendanceRecord, AttendanceRecordSchema, VideoSessionSchema } from 'src/modules/video_calls/video-calls.schema';
 
 export type WorkshopDocument = Workshop & Document;
 
@@ -53,6 +54,7 @@ class Session {
 }
 
 const SessionSchema = SchemaFactory.createForClass(Session);
+
 
 @Schema({ timestamps: true })
 export class Workshop {
@@ -109,6 +111,17 @@ export class Workshop {
 
     @Prop({ type: [SessionSchema], required: true })
     sessions: Session[];
+
+    @Prop({ type: VideoSessionSchema, default: () => ({ isActive: false }) })
+    videoSession: {
+        isActive: boolean;
+        startedAt?: Date;
+        endedAt?: Date;
+        sessionName?: string;
+    };
+
+    @Prop({ type: [AttendanceRecordSchema], default: [] })
+    attendanceRecords: AttendanceRecord[];
 }
 
 export const WorkshopSchema = SchemaFactory.createForClass(Workshop);
