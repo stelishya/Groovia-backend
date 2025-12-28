@@ -28,6 +28,27 @@ export class AdminsController {
         return await this._adminService.getAllUsers(query);
     }
 
+    @Get('dashboard')
+    @Roles(Role.ADMIN)
+    @ApiOperation({ summary: 'Admin dashboard analytics' })
+    async getDashboard() {
+        return await this._adminService.getDashboard();
+    }
+
+    @Get('dashboard/user-growth')
+    @Roles(Role.ADMIN)
+    @ApiOperation({ summary: 'User growth time series' })
+    async getUserGrowth(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string, @Query('interval') interval?: string) {
+        return await this._adminService.getUserGrowth(startDate, endDate, interval);
+    }
+
+    @Get('dashboard/revenue-trend')
+    @Roles(Role.ADMIN)
+    @ApiOperation({ summary: 'Revenue trend time series' })
+    async getRevenueTrend(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string, @Query('interval') interval?: string) {
+        return await this._adminService.getRevenueTrend(startDate, endDate, interval);
+    }
+
     @Patch('users/:userId/status')
     @ApiOperation({ summary: "Block/Unblock user (toggle)" })
     @ApiResponse({

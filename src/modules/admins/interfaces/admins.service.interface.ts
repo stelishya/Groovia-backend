@@ -9,7 +9,9 @@ export const IAdminServiceToken = Symbol('IAdminService')
 export interface IAdminService {
     findOne(filter: Partial<Admin>): Promise<Admin | null>;
     createAdmin(adminData: any): Promise<Admin>;
-    // getDashboard(): Promise<void>;
+    getDashboard(): Promise<any>;
     getAllUsers(query: GetAllUsersQueryDto): Promise<{ users: User[]; total: number }>;
     blockUser(userId: string): Promise<SuccessResponseDto>
+    getUserGrowth(startDate?: string, endDate?: string, interval?: string): Promise<{ label: string; value: number }[]>
+    getRevenueTrend(startDate?: string, endDate?: string, interval?: string): Promise<{ label: string; value: number }[]>
 }

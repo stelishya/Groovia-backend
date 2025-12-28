@@ -1,6 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
+export type CompetitionDocument = Competition & Document;
+
 export enum CompetitionCategory {
   SOLO = 'solo',
   GROUP = 'group',
