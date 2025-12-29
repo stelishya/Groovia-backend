@@ -19,6 +19,7 @@ export class AdminsService implements IAdminService {
     constructor(
         @Inject(IAdminRepoToken)
         private readonly _adminRepo: IAdminRepo,
+                // @Inject('AdminRepository') private readonly adminRepo: IAdminRepo,
         @Inject(IUserServiceToken)
         private readonly _userService: IUserService,
     ) { }
@@ -113,5 +114,16 @@ export class AdminsService implements IAdminService {
 
         return await this._adminRepo.getRevenueTrend(startDate, endDate, interval);
     }
-
+    async getPayments(query: {
+        page?: number;
+        limit?: number;
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
+        status?: string;
+        type?: string;
+        dateFrom?: string;
+        dateTo?: string;
+    }) {
+        return this._adminRepo.getPayments(query);
+    }
 }

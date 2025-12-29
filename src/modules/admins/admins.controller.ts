@@ -63,5 +63,19 @@ export class AdminsController {
         this._logger.log(` Toggle Block user ${userId}`)
         return await this._adminService.blockUser(userId);
     }
-
+        @Get('payments')
+    @Roles(Role.ADMIN)
+    @ApiOperation({ summary: 'Admin payments list' })
+    async getPayments(
+        @Query('page') page: number = 1,
+        @Query('limit') limit: number = 10,
+        @Query('sortBy') sortBy?: string,
+        @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+        @Query('status') status?: string,
+        @Query('type') type?: string,
+        @Query('dateFrom') dateFrom?: string,
+        @Query('dateTo') dateTo?: string,
+    ) {
+        return await this._adminService.getPayments({ page, limit, sortBy, sortOrder, status, type, dateFrom, dateTo });
+    }
 }
