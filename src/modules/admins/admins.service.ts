@@ -64,10 +64,6 @@ export class AdminsService implements IAdminService {
         }
     }
 
-    // async getDashboard(): Promise<void> {
-
-    // }
-
     async getDashboard(): Promise<any> {
         try {
             return await this._adminRepo.getDashboardAggregates();

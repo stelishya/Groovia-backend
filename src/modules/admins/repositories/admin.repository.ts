@@ -187,22 +187,27 @@ import { WorkshopDocument, Workshop } from '../../workshops/models/workshop.sche
             if (!createdAt && p._doc && p._doc.createdAt) createdAt = p._doc.createdAt;
 
             // User population may be ObjectId or populated object
-            let user = null;
-            // if (p.userId && typeof p.userId === 'object' && p.userId.username) {
-            //     user = {
-            //         _id: p.userId._id,
-            //         username: p.userId.username,
-            //         email: p.userId.email,
-            //         role: p.userId.role,
-            //     };
-            // }
+            let user: {
+                _id?: any;
+                username?: any;
+                email?: any;
+                role?: any;
+            } = {};
+            if (p.userId && typeof p.userId === 'object' && p.userId.username) {
+                user = {
+                    _id: p.userId._id,
+                    username: p.userId.username,
+                    email: p.userId.email,
+                    role: p.userId.role,
+                };
+            }
 
             return {
                 _id: p._id,
                 referenceId: p.referenceId,
                 orderId: p.orderId,
                 createdAt,
-                user,
+                user: Object.keys(user).length > 0 ? user : undefined,
                 paymentType: p.paymentType,
                 relatedEntityName,
                 relatedEntityId,
