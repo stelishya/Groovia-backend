@@ -6,6 +6,7 @@ export interface TokenPayload {
   userId: string;
   email: string;
   username: string;
+  role?: string[];
 }
 
 @Injectable()
@@ -13,7 +14,7 @@ export class TokenService {
   constructor(
     private readonly _jwtService: JwtService,
     private readonly _configService: ConfigService,
-  ) {}
+  ) { }
 
   async signAccessToken(payload: TokenPayload): Promise<string> {
     console.log("signAccessToken in token.service.ts !!")

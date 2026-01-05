@@ -12,45 +12,45 @@ import { HttpStatus } from 'src/common/enums/http-status.enum';
 import { Role } from 'src/common/enums/role.enum';
 
 @Injectable()
-export class CommonService implements ICommonService{
-    private readonly _logger= new Logger(CommonService.name)
-    private _googleClient:OAuth2Client
-    constructor(
-        @Inject(IUserServiceToken)
-        private readonly _userService:IUserService,
-        private readonly _jwtService:JwtService,
-        private readonly _configService:ConfigService,
-        private readonly _redisService:RedisService,
-    ){
-        this._googleClient = new OAuth2Client(
-            this._configService.get<string>('GOOGLE_CLIENT_ID'),
-        )
+export class CommonService implements ICommonService {
+  private readonly _logger = new Logger(CommonService.name)
+  private _googleClient: OAuth2Client
+  constructor(
+    @Inject(IUserServiceToken)
+    private readonly _userService: IUserService,
+    private readonly _jwtService: JwtService,
+    private readonly _configService: ConfigService,
+    private readonly _redisService: RedisService,
+  ) {
+    this._googleClient = new OAuth2Client(
+      this._configService.get<string>('GOOGLE_CLIENT_ID'),
+    )
+  }
+  async logoutHandler(req: Request, res: Response): Promise<void> {
+    const cookieName = 'refreshToken';
+    const accessToken = req.headers.authorization?.split(' ')[1];
+    const refreshToken = req.cookies[cookieName];
+    try {
+      if (accessToken) {
+        await this._blacklistToken(accessToken);
+      }
+      if (refreshToken) {
+        await this._blacklistToken(refreshToken);
+      }
+      res.clearCookie(cookieName, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+      });
+      this._logger.log(`Logout service called, cleared cookie: ${cookieName}`)
+      console.log(`Logout service called, cleared cookie: ${cookieName}`)
+      res.status(HttpStatus.OK).json({ message: 'User logged out successfully' })
+    } catch (error) {
+      this._logger.error(`Logout service failed: ${error.message}`)
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Logout failed' })
     }
-    async logoutHandler(req: Request, res: Response): Promise<void> {
-        const cookieName = 'refreshToken';
-        const accessToken = req.headers.authorization?.split(' ')[1];
-        const refreshToken = req.cookies[cookieName];
-        try {
-            if(accessToken){
-                await this._blacklistToken(accessToken);
-            }
-            if(refreshToken){
-                await this._blacklistToken(refreshToken);
-            }
-            res.clearCookie(cookieName,{
-                httpOnly:true,
-                secure:process.env.NODE_ENV === 'production',
-                sameSite:'strict',
-            });
-            this._logger.log(`Logout service called, cleared cookie: ${cookieName}`)
-            console.log(`Logout service called, cleared cookie: ${cookieName}`)
-            res.status(HttpStatus.OK).json({message:'User logged out successfully'})
-        } catch (error) {
-            this._logger.error(`Logout service failed: ${error.message}`)
-            res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({message:'Logout failed'})
-        }
-    }
-    private _convertToLanguageEnum(
+  }
+  private _convertToLanguageEnum(
     lang: string | undefined,
   ): Language | undefined {
     if (!lang) return undefined;
@@ -68,12 +68,12 @@ export class CommonService implements ICommonService{
 
     return languageMap[language] || Language.ENGLISH; // Default to English if not found
   }
-    // google authentication
+  // google authentication
   async handleGoogleAuth(
     credential: string,
     res: Response,
     role: Role.CLIENT | Role.DANCER
-  ): Promise<{success:boolean, accessToken: string; message: string }> {
+  ): Promise<{ success: boolean, accessToken: string; message: string }> {
     try {
       const ticket = await this._googleClient.verifyIdToken({
         idToken: credential,
@@ -90,7 +90,7 @@ export class CommonService implements ICommonService{
         email,
         name: fullname,
         email_verified,
-        sub:googleId,
+        sub: googleId,
         locale,
         picture: profileImage,
       } = payload;
@@ -101,12 +101,12 @@ export class CommonService implements ICommonService{
       const language = this._convertToLanguageEnum(locale);
 
       let user: User | null = await this._userService.findByEmail(email);
-      
+
       if (!user) {
         // new user -create account with selected role
         // sanitizedUsername -remove spaces and special chars, keep only alphanumeric and underscores
         let sanitizedUsername = fullname?.trim() || 'user';
-        
+
         // ensure username is unique by appending part of googleId if needed
         const existingUser = await this._userService.findByUsername(sanitizedUsername);
         if (existingUser) {
@@ -124,10 +124,10 @@ export class CommonService implements ICommonService{
       } else {
         // existing user - check if blocked
         if (user.isBlocked) {
-          return {success:false,accessToken:'',message:'Your account has been blocked. Please contact support.'}
+          return { success: false, accessToken: '', message: 'Your account has been blocked. Please contact support.' }
           // throw new BadRequestException('Your account has been blocked. Please contact support.');
         }
-        
+
         // if existing user doesn't have googleId, link it
         if (!user.googleId) {
           user = await this._userService.updateUserGoogleId(user._id, googleId);
@@ -143,7 +143,7 @@ export class CommonService implements ICommonService{
         this.setRefreshTokenCookie(res, refreshToken);
 
         return {
-          success:true,
+          success: true,
           accessToken,
           message: 'Google sign-in successful',
         };
@@ -155,29 +155,33 @@ export class CommonService implements ICommonService{
     }
   }
 
-    async generateToken(user:User):Promise<{accessToken:string,refreshToken:string}>{
-        const payload = { userId: user._id, email: user.email, role: user.role };
-        const accessToken = await this._jwtService.signAsync(payload, {
-            secret: this._configService.get<string>('JWT_SECRET'),
-            expiresIn: '1d',
-        });
-        const refreshToken = await this._jwtService.signAsync(payload, {
-            secret: this._configService.get<string>('JWT_SECRET'),
-            expiresIn: '7d',
-        });
-        return { accessToken, refreshToken };
-    }
+  async generateToken(user: any, roles?: string[]): Promise<{ accessToken: string; refreshToken: string }> {
+    const payload = {
+      userId: user._id,
+      email: user.email,
+      role: roles || user.role
+    };
+    const accessToken = await this._jwtService.signAsync(payload, {
+      secret: this._configService.get<string>('JWT_SECRET'),
+      expiresIn: '1d',
+    });
+    const refreshToken = await this._jwtService.signAsync(payload, {
+      secret: this._configService.get<string>('JWT_SECRET'),
+      expiresIn: '7d',
+    });
+    return { accessToken, refreshToken };
+  }
 
-    setRefreshTokenCookie(response: Response, refreshToken: string): void {
-        response.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: this._configService.get<string>('NODE_ENV') === 'production',
-            sameSite: 'strict',
-            maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        });
-    }
+  setRefreshTokenCookie(response: Response, refreshToken: string): void {
+    response.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: this._configService.get<string>('NODE_ENV') === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+  }
 
-    private async _blacklistToken(token: string): Promise<void> {
+  private async _blacklistToken(token: string): Promise<void> {
     try {
       const decoded: JwtPayload = this._jwtService.decode(token);
       if (decoded && decoded.exp) {
