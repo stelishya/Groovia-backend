@@ -17,7 +17,7 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     exposedHeaders: ['Authorization'],
   })
-
+  app.setGlobalPrefix('api');
   await app.listen(process.env.BACKEND_PORT ?? 5000);
 }
 bootstrap();

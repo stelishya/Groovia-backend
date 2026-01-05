@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Logger, Param, Patch, Query } from '@nestjs/common';
+import { Controller, Get, Inject, Logger, Param, Patch, Query,UseGuards } from '@nestjs/common';
 import { IAdminServiceToken, type IAdminService } from './interfaces/admins.service.interface';
 import type { GetAllUsersQueryDto } from './dto/admin.dto';
 import { User } from '../users/models/user.schema';
@@ -8,6 +8,7 @@ import { Role } from 'src/common/enums/role.enum';
 import { Types } from 'mongoose';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
+import { JwtAuthGuard } from '../auth/guards/jwtAuth.guard';
 
 @Controller('admins')
 export class AdminsController {
@@ -21,6 +22,8 @@ export class AdminsController {
     // async getDashboard(@Query() query: unknown, @Param() param: unknown){
     //     return this._adminService.getDashboard();
     // }
+
+    @UseGuards(JwtAuthGuard)
     @Get('users')
     async getAllUsers(
         @Query() query: GetAllUsersQueryDto,

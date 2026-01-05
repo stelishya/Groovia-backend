@@ -60,9 +60,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         isUserBlocked: true,
       });
     }
-
+    
     if (err || !user) {
       const res = context.switchToHttp().getResponse<Response>();
+      console.log("response ahn:",res)
       res.setHeader(
         'WWW-Authenticate',
         'Bearer error="invalid_token", error_description="access token invalid"',
