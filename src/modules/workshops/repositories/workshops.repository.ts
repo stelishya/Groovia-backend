@@ -70,10 +70,11 @@ export class WorkshopsRepository {
                 .sort(sortOptions)
                 .skip(skip)
                 .limit(limit)
+                .lean()
                 .exec(),
             this.workshopModel.countDocuments(mongoFilter).exec()
         ]);
-        console.log("explore workshops:",workshops);
+        console.log("explore workshops:", workshops);
 
         return {
             workshops,

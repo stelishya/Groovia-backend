@@ -133,9 +133,10 @@ export class CompetitionService implements ICompetitionService {
     const skip = (page - 1) * limit;
 
     const { data, total } = await this._competitionRepository.find(query, sortOptions, skip, limit);
+    const competitionsWithSignedUrls = await this.processCompetitionsWithUrls(data);
 
     return {
-      data,
+      data: competitionsWithSignedUrls,
       total,
       page,
       totalPages: Math.ceil(total / limit)
@@ -147,7 +148,10 @@ export class CompetitionService implements ICompetitionService {
     if (!competition) {
       throw new Error('Competition not found');
     }
-    return competition;
+
+    // Convert to plain object if needed and add signed URLs
+    const competitionObj = competition['toObject'] ? competition['toObject']() : competition;
+    return this.addSignedUrlsToCompetition(competitionObj);
   }
 
   async findByOrganizer(organizerId: string, options?: {

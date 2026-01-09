@@ -75,4 +75,41 @@ export class UserRepository
     findById(id: string | Types.ObjectId): Promise<UserDocument | null> {
         return this._userModel.findById(id).exec();
     }
+
+    async findDancersWithFilters(
+        filter: FilterQuery<User>,
+        skip: number,
+        limit: number,
+        sort: any
+    ): Promise<User[]> {
+        const pipeline: any[] = [
+            { $match: filter },
+            {
+                $addFields: {
+                    likesCount: { $size: { $ifNull: ["$likes", []] } }
+                }
+            }
+        ];
+
+        if (sort) {
+            // Map 'likes' sort to 'likesCount'
+            const sortStage: any = {};
+            // Check if we are sorting by 'likes'
+            if (sort.likes) {
+                sortStage.likesCount = sort.likes;
+                delete sort.likes; // Remove original likes sort if present combined
+            }
+            // Merge with other sort keys
+            Object.assign(sortStage, sort);
+
+            if (Object.keys(sortStage).length > 0) {
+                pipeline.push({ $sort: sortStage });
+            }
+        }
+
+        pipeline.push({ $skip: skip });
+        pipeline.push({ $limit: limit });
+
+        return this._userModel.aggregate(pipeline).exec();
+    }
 }

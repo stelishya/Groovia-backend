@@ -230,11 +230,13 @@ export class ClientService implements IClientService {
         } else if (sortBy === 'name') {
             sortOptions.username = 1; // ascending order (A-Z)
         }
-        const dancers = await this._userService.find(query, {
-            sort: sortOptions,
-            skip: (page - 1) * limit,
-            limit: limit
-        });
+
+        const dancers = await this._userService.findDancersWithFilters(
+            query,
+            (page - 1) * limit,
+            limit,
+            sortOptions
+        );
         const total = await this._userService.count(query);
         return { dancers, total };
     }

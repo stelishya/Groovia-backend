@@ -158,26 +158,44 @@ export class DancerService implements IDancerService {
     }
 
     async toggleLike(dancerId: string, userId: string): Promise<User> {
+        if (!Types.ObjectId.isValid(dancerId)) {
+            throw new BadRequestException('Invalid Dancer ID');
+        }
+        if (!Types.ObjectId.isValid(userId)) {
+            throw new BadRequestException('Invalid User ID');
+        }
+
         const dancer = await this.userService.findById(dancerId);
         if (!dancer) {
             throw new NotFoundException('Dancer not found');
         }
-        // Initialize likes array if it doesn't exist
-        if (!dancer.likes || !Array.isArray(dancer.likes)) {
-            dancer.likes = [];
-        }
+
         const userObjectId = new Types.ObjectId(userId);
-        const likes = dancer.likes.map(id => id.toString());
-        const userIndex = likes.indexOf(userId);
 
-        if (userIndex === -1) {
-            // User has not liked yet, so add the like
-            dancer.likes.push(userObjectId);
-        } else {
+        // Check if user has already liked
+        // Ensure likes is an array before calling some
+        const likes = Array.isArray(dancer.likes) ? dancer.likes : [];
+        const isLiked = likes.some(id => id.toString() === userId);
+
+        let updatedDancer;
+        if (isLiked) {
             // User has already liked, so remove the like
-            dancer.likes.splice(userIndex, 1);
+            updatedDancer = await this.userService.updateOne(
+                { _id: new Types.ObjectId(dancerId) },
+                { $pull: { likes: userObjectId } }
+            );
+        } else {
+            // User has not liked yet, so add the like
+            updatedDancer = await this.userService.updateOne(
+                { _id: new Types.ObjectId(dancerId) },
+                { $addToSet: { likes: userObjectId } }
+            );
         }
 
-        return await dancer.save();
+        if (!updatedDancer) {
+            throw new BadRequestException('Failed to update like status');
+        }
+
+        return updatedDancer;
     }
 }

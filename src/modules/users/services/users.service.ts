@@ -117,4 +117,13 @@ export class UsersService implements IUserService {
     updateUserGoogleId(userId: Types.ObjectId, googleId: string): Promise<User | null> {
         return this._userRepository.updateOne({ _id: userId }, { googleId });
     }
+
+    findDancersWithFilters(
+        filter: FilterQuery<User>,
+        skip: number,
+        limit: number,
+        sort: any
+    ): Promise<User[]> {
+        return this._userRepository.findDancersWithFilters(filter, skip, limit, sort);
+    }
 }

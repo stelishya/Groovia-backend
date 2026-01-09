@@ -28,4 +28,11 @@ export interface IUserRepository {
     countDocuments(filter?: FilterQuery<User>): Promise<number>;
 
     findById(id: string | Types.ObjectId): Promise<UserDocument | null>;
+
+    findDancersWithFilters(
+        filter: FilterQuery<User>,
+        skip: number,
+        limit: number,
+        sort: any
+    ): Promise<User[]>;
 }

@@ -73,7 +73,31 @@ export class WorkshopsService implements IWorkshopService {
     }
 
     async findAll(query: any): Promise<{ workshops: Workshop[], total: number, page: number, limit: number }> {
-        return this._workshopRepository.findAllWithFilters(query);
+        const start = Date.now();
+        console.log(`[Workshops] findAll request started at ${start}`);
+
+        const { workshops, total, page, limit } = await this._workshopRepository.findAllWithFilters(query);
+        const dbTime = Date.now() - start;
+        console.log(`[Workshops] DB Query took ${dbTime}ms`);
+
+        // Add signed URLs to all workshops
+        const signStart = Date.now();
+        const workshopsWithUrls = await Promise.all(workshops.map(async (workshop) => {
+            const workshopObj = workshop && typeof (workshop as any).toObject === 'function'
+                ? (workshop as any).toObject()
+                : workshop;
+            return this.addSignedUrlsToWorkshop(workshopObj);
+        }));
+        const signTime = Date.now() - signStart;
+        console.log(`[Workshops] Signing took ${signTime}ms`);
+        console.log(`[Workshops] Total findAll took ${Date.now() - start}ms`);
+
+        return {
+            workshops: workshopsWithUrls,
+            total,
+            page,
+            limit
+        };
     }
 
     async findOne(id: string): Promise<Workshop> {

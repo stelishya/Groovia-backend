@@ -10,13 +10,20 @@ export class StorageUtils {
     static async getSignedUrl(storageService: IStorageService, pathOrUrl: string): Promise<string> {
         if (!pathOrUrl) return pathOrUrl;
 
+        // processing a file path or URL to get a signed URL
+        if (pathOrUrl.startsWith('data:')) {
+            return pathOrUrl;
+        }
+
         try {
             if (pathOrUrl.startsWith('http')) {
                 const url = new URL(pathOrUrl);
                 // Remove leading slash and decode to get the literal S3 key
                 const key = decodeURIComponent(url.pathname.substring(1));
+                console.log(`[StorageUtils] Signing URL: ${pathOrUrl} -> Key: ${key}`);
                 return await storageService.getSignedUrl(key);
             } else {
+                console.log(`[StorageUtils] Signing Key: ${pathOrUrl}`);
                 return await storageService.getSignedUrl(pathOrUrl);
             }
         } catch (error) {
