@@ -90,7 +90,7 @@ export class ClientController {
         return ApiResponse.success({ message: MESSAGES.DANCER_PROFILE_RETRIEVED_SUCCESSFULLY, dancer });
     }
 
-    // @Public()
+    @UseGuards(JwtAuthGuard)
     @Get()
     @HttpCode(HttpStatus.OK)
     async getAllDancers(
@@ -177,10 +177,10 @@ export class ClientController {
     }
 
     @Post('events/:id/mark-payment-failed')
-      @UseGuards(JwtAuthGuard)
-      async markFailedPayment(@Param('id') id: string, @Request() req) {
+    @UseGuards(JwtAuthGuard)
+    async markFailedPayment(@Param('id') id: string, @Request() req) {
         console.log('markPaymentFailed called with:', id);
         await this._clientService.markPaymentFailed(id, req.user.userId);
         return { success: true, message: 'Payment marked as failed' };
-      }
+    }
 }

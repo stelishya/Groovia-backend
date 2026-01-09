@@ -16,10 +16,10 @@ type NotificationMetadata = {
 
 @Injectable()
 export class NotificationService {
-     constructor(
+    constructor(
         @InjectModel(Notification.name)
         private notificationModel: Model<Notification>,
-    ) {}
+    ) { }
 
     async createNotification(
         userId: Types.ObjectId,
@@ -42,7 +42,7 @@ export class NotificationService {
             isRead: false,
             metadata: metadata || {},
         });
-        
+
         return await notification.save();
     }
     async getUserNotifications(userId: string): Promise<Notification[]> {
@@ -56,12 +56,12 @@ export class NotificationService {
             .limit(50) // Limit to most recent 50 notifications
             .exec();
     }
-    
+
     async getUnreadCount(userId: string): Promise<number> {
         if (!userId || !Types.ObjectId.isValid(userId)) {
             throw new BadRequestException('Invalid user ID');
         }
-        
+
         return this.notificationModel.countDocuments({
             userId: new Types.ObjectId(userId),
             isRead: false

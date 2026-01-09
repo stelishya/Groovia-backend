@@ -8,6 +8,8 @@ import { RazorpayModule } from 'src/common/payments/razorpay/razorpay.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { ICompetitionRepoToken } from './interfaces/competition.repo.interface';
 import { ICompetitionServiceToken } from './interfaces/competition.service.interface';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { ICompetitionServiceToken } from './interfaces/competition.service.inter
     ]),
     RazorpayModule,
     PaymentsModule,
+    NotificationsModule,
+    UsersModule,
   ],
   controllers: [CompetitionController],
   providers: [

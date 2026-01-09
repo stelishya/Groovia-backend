@@ -12,6 +12,10 @@ import { type IPaymentService, IPaymentServiceToken } from 'src/common/payments/
 import { IPaymentsServiceToken, PaymentStatus, PaymentType } from '../payments/interfaces/payments.service.interface';
 import type { IPaymentsService } from '../payments/interfaces/payments.service.interface';
 import { StorageUtils } from 'src/common/storage/utils/storage.utils';
+import { NotificationService } from '../notifications/services/notification.service';
+import { NotificationType } from '../notifications/models/notification.schema';
+import { INotificationServiceToken } from '../notifications/interfaces/notifications.service.interface';
+import { type IUserService, IUserServiceToken } from '../users/interfaces/services/user.service.interface';
 
 @Injectable()
 export class WorkshopsService implements IWorkshopService {
@@ -20,7 +24,9 @@ export class WorkshopsService implements IWorkshopService {
         private readonly _workshopRepository: IWorkshopRepo,
         @Inject(IStorageServiceToken) private readonly awsS3Service: IStorageService,
         @Inject(IPaymentServiceToken) private readonly razorpayService: IPaymentService,
-        @Inject(IPaymentsServiceToken) private readonly paymentsService: IPaymentsService
+        @Inject(IPaymentsServiceToken) private readonly paymentsService: IPaymentsService,
+        @Inject(INotificationServiceToken) private readonly notificationService: NotificationService,
+        @Inject(IUserServiceToken) private readonly _usersService: IUserService,
     ) { }
 
     async create(body: any, file: any, instructorId: string): Promise<Workshop> {
@@ -41,7 +47,8 @@ export class WorkshopsService implements IWorkshopService {
         // Upload file to S3 if provided
         if (file && file.buffer) {
             const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-            const fileName = `workshops/${uniqueSuffix}-${file.originalname}`;
+            const sanitizedName = file.originalname.replace(/\s+/g, '-');
+            const fileName = `workshops/${uniqueSuffix}-${sanitizedName}`;
             const uploadResult = await this.awsS3Service.uploadBuffer(file.buffer, fileName, file.mimetype);
             posterImage = uploadResult.Location;
             console.log("Image uploaded to S3:", posterImage);
@@ -190,7 +197,18 @@ export class WorkshopsService implements IWorkshopService {
         });
 
         // TODO: Create a booking record in a separate Bookings collection if needed
-        // TODO: Send confirmation email
+        // Send confirmation notification to instructor
+        const dancerId = workshop.participants.find(p => p.dancerId.toString() === userId)?.dancerId;
+        const user = await this._usersService.findById(dancerId ?? '');
+
+        await this.notificationService.createNotification(
+            workshop.instructor instanceof Types.ObjectId ? workshop.instructor : (workshop.instructor as any)._id,
+            NotificationType.WORKSHOP_BOOKING_RECEIVED,
+            'New Workshop Booking',
+            `You have a new booking from 
+            ${user?.username} 
+            for your workshop: ${workshop.title}`,
+        );
 
         return {
             success: true,

@@ -30,6 +30,7 @@ export class UpgradeRequestController {
         private readonly upgradeRequestService: IUpgradeRequestService
     ) { }
 
+    @UseGuards(JwtAuthGuard)
     @Public()
     @Post('upgrade-role')
     @HttpCode(HttpStatus.CREATED)
@@ -84,6 +85,7 @@ export class UpgradeRequestController {
         return await this.upgradeRequestService.createRequest(upgradeData);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get('upgrade-requests')
     async getAllUpgradeRequests() {
         return await this.upgradeRequestService.getAllRequests();
@@ -101,11 +103,13 @@ export class UpgradeRequestController {
         return result;
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get('upgrade-requests/pending')
     async getPendingRequests() {
         return await this.upgradeRequestService.getPendingRequests();
     }
 
+    @UseGuards(JwtAuthGuard)
     @Patch('upgrade-requests/:id/approve')
     async approveRequest(
         @Param('id') id: string,
@@ -114,6 +118,7 @@ export class UpgradeRequestController {
         return await this.upgradeRequestService.approveRequest(id, body.adminNote);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Patch('upgrade-requests/:id/reject')
     async rejectRequest(
         @Param('id') id: string,

@@ -7,6 +7,8 @@ import { PaymentsModule } from '../payments/payments.module';
 import { WorkshopsService } from './workshops.service';
 import { WorkshopsRepository } from './repositories/workshops.repository';
 import { RazorpayModule } from '../../common/payments/razorpay/razorpay.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { UsersModule } from '../users/users.module';
 import { IWorkshopServiceToken } from './interfaces/workshop.service.interface';
 import { IWorkshopRepoToken } from './interfaces/workshop.repo.interface';
 
@@ -15,7 +17,9 @@ import { IWorkshopRepoToken } from './interfaces/workshop.repo.interface';
     MongooseModule.forFeature([{ name: Workshop.name, schema: WorkshopSchema }]),
     StorageModule,
     RazorpayModule,
-    PaymentsModule
+    PaymentsModule,
+    NotificationsModule,
+    UsersModule
   ],
   controllers: [WorkshopsController],
   providers: [

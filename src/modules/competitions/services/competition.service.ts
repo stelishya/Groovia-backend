@@ -11,6 +11,10 @@ import { type IPaymentService, IPaymentServiceToken } from 'src/common/payments/
 import { IPaymentsServiceToken, PaymentStatus, PaymentType } from '../../payments/interfaces/payments.service.interface';
 import type { IPaymentsService } from '../../payments/interfaces/payments.service.interface';
 import { StorageUtils } from 'src/common/storage/utils/storage.utils';
+import { NotificationService } from 'src/modules/notifications/services/notification.service';
+import { NotificationType } from 'src/modules/notifications/models/notification.schema';
+import { INotificationServiceToken } from 'src/modules/notifications/interfaces/notifications.service.interface';
+import { type IUserService, IUserServiceToken } from 'src/modules/users/interfaces/services/user.service.interface';
 
 @Injectable()
 export class CompetitionService implements ICompetitionService {
@@ -19,7 +23,9 @@ export class CompetitionService implements ICompetitionService {
     private readonly _competitionRepository: ICompetitionRepo,
     @Inject(IStorageServiceToken) private readonly _storageService: IStorageService,
     @Inject(IPaymentServiceToken) private readonly _paymentService: IPaymentService,
-    @Inject(IPaymentsServiceToken) private readonly _paymentsService: IPaymentsService
+    @Inject(IPaymentsServiceToken) private readonly _paymentsService: IPaymentsService,
+    @Inject(INotificationServiceToken) private readonly notificationService: NotificationService,
+    @Inject(IUserServiceToken) private readonly _usersService: IUserService,
   ) { }
 
   async create(body: any, organizerId: string, posterFile?: any, documentFile?: any): Promise<Competition> {
@@ -48,7 +54,8 @@ export class CompetitionService implements ICompetitionService {
     // Upload file to S3 if provided
     if (posterFile && posterFile.buffer) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      const fileName = `competitions/${uniqueSuffix}-${posterFile.originalname}`;
+      const sanitizedName = posterFile.originalname.replace(/\s+/g, '-');
+      const fileName = `competitions/${uniqueSuffix}-${sanitizedName}`;
       const uploadResult = await this._storageService.uploadBuffer(posterFile.buffer, fileName, posterFile.mimetype);
       posterImage = uploadResult.Location;
       console.log("Competition image uploaded to S3:", posterImage);
@@ -57,7 +64,8 @@ export class CompetitionService implements ICompetitionService {
     // Upload document to S3 if provided
     if (documentFile && documentFile.buffer) {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      const fileName = `competitions/documents/${uniqueSuffix}-${documentFile.originalname}`;
+      const sanitizedName = documentFile.originalname.replace(/\s+/g, '-');
+      const fileName = `competitions/documents/${uniqueSuffix}-${sanitizedName}`;
       const uploadResult = await this._storageService.uploadBuffer(documentFile.buffer, fileName, documentFile.mimetype);
       documentUrl = uploadResult.Location;
       console.log("Competition document uploaded to S3:", documentUrl);
@@ -527,6 +535,16 @@ export class CompetitionService implements ICompetitionService {
     });
 
     // Send confirmation email
+    // Get user details for notification
+    const user = await this._usersService.findById(dancerId);
+
+    // Send confirmation notification to organizer
+    await this.notificationService.createNotification(
+      competition.organizer_id instanceof Types.ObjectId ? competition.organizer_id : (competition.organizer_id as any)._id,
+      NotificationType.COMPETITION_BOOKING_RECEIVED,
+      'New Competition Booking',
+      `You have a new booking from ${user?.username || 'a user'} for your competition: ${competition.title}`,
+    );
 
     return {
       success: true,

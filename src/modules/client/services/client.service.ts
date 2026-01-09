@@ -6,11 +6,10 @@ import { Events } from '../models/events.schema';
 import { Model, Types } from 'mongoose';
 import { CreateRequestDto, updateBookingStatusDto, UpdateClientProfileDto } from '../dto/client.dto';
 import { NotificationType } from '../../notifications/models/notification.schema';
-import { NotificationService } from '../../notifications/services/notification.service';
+import { INotificationServiceToken, type INotificationService } from '../../notifications/interfaces/notifications.service.interface';
 import { type IStorageService, IStorageServiceToken } from 'src/common/storage/interfaces/storage.interface';
 import { type IPaymentService, IPaymentServiceToken } from 'src/common/payments/interfaces/payment.interface';
-import { IPaymentsServiceToken, PaymentStatus, PaymentType } from '../../payments/interfaces/payments.service.interface';
-import type { IPaymentsService } from '../../payments/interfaces/payments.service.interface';
+import { IPaymentsServiceToken, PaymentStatus, PaymentType, type IPaymentsService } from '../../payments/interfaces/payments.service.interface';
 import { ConfigService } from '@nestjs/config';
 import { IClientService } from '../interfaces/client.interface';
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -37,8 +36,8 @@ export class ClientService implements IClientService {
         @InjectModel(Events.name) private readonly _eventModel: Model<Events>,
         @Inject(IUserServiceToken)
         private readonly _userService: IUserService,
-        @Inject(forwardRef(() => NotificationService))
-        private readonly _notificationService: NotificationService,
+        @Inject(forwardRef(() => INotificationServiceToken))
+        private readonly _notificationService: INotificationService,
         @Inject(IStorageServiceToken)
         private readonly _storageService: IStorageService,
         @Inject(IPaymentServiceToken)
@@ -50,7 +49,8 @@ export class ClientService implements IClientService {
 
     async uploadProfilePicture(userId: string, file: Express.Multer.File): Promise<{ user: User; imageUrl: string }> {
         const userObjectId = new Types.ObjectId(userId);
-        const fileName = `profiles/${userObjectId}-${Date.now()}-${file.originalname}`;
+        const sanitizedName = file.originalname.replace(/\s+/g, '-');
+        const fileName = `profiles/${userObjectId}-${Date.now()}-${sanitizedName}`;
 
         // Upload to S3
         const result = await this._storageService.uploadBuffer(

@@ -13,8 +13,8 @@ export class StorageUtils {
         try {
             if (pathOrUrl.startsWith('http')) {
                 const url = new URL(pathOrUrl);
-                // Remove leading slash if present, though substring(1) usually does it for pathname /key
-                const key = url.pathname.substring(1);
+                // Remove leading slash and decode to get the literal S3 key
+                const key = decodeURIComponent(url.pathname.substring(1));
                 return await storageService.getSignedUrl(key);
             } else {
                 return await storageService.getSignedUrl(pathOrUrl);

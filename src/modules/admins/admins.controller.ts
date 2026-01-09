@@ -31,6 +31,7 @@ export class AdminsController {
         return await this._adminService.getAllUsers(query);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get('dashboard')
     @Roles(Role.ADMIN)
     @ApiOperation({ summary: 'Admin dashboard analytics' })
@@ -38,6 +39,7 @@ export class AdminsController {
         return await this._adminService.getDashboard();
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get('dashboard/user-growth')
     @Roles(Role.ADMIN)
     @ApiOperation({ summary: 'User growth time series' })
@@ -45,6 +47,7 @@ export class AdminsController {
         return await this._adminService.getUserGrowth(startDate, endDate, interval);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Get('dashboard/revenue-trend')
     @Roles(Role.ADMIN)
     @ApiOperation({ summary: 'Revenue trend time series' })
@@ -52,6 +55,7 @@ export class AdminsController {
         return await this._adminService.getRevenueTrend(startDate, endDate, interval);
     }
 
+    @UseGuards(JwtAuthGuard)
     @Patch('users/:userId/status')
     @ApiOperation({ summary: "Block/Unblock user (toggle)" })
     @ApiResponse({
@@ -66,7 +70,9 @@ export class AdminsController {
         this._logger.log(` Toggle Block user ${userId}`)
         return await this._adminService.blockUser(userId);
     }
-        @Get('payments')
+
+    @UseGuards(JwtAuthGuard)
+    @Get('payments')
     @Roles(Role.ADMIN)
     @ApiOperation({ summary: 'Admin payments list' })
     async getPayments(

@@ -1,14 +1,16 @@
-import { BadRequestException, Controller, Get, Param, Patch, Query, UseGuards, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Param, Patch, Query, UseGuards, ForbiddenException, Inject } from '@nestjs/common';
 import { MESSAGES } from 'src/common/constants/constants';
 import { ApiResponse } from 'src/common/models/common-response.model';
 import { NotificationService } from '../services/notification.service';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwtAuth.guard';
 import { ActiveUser } from 'src/common/decorators/active-user.decorator';
+import { INotificationServiceToken } from '../interfaces/notifications.service.interface';
 
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationsController {
-    constructor(private readonly notificationService: NotificationService) { }
+    constructor(
+        @Inject(INotificationServiceToken) private readonly notificationService: NotificationService) { }
 
     @Get('user/:userId')
     async getMyNotifications(

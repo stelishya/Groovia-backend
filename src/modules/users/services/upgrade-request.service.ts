@@ -4,7 +4,8 @@ import { Model, Types } from 'mongoose';
 import { UpgradeRequest, UpgradeRequestStatus } from '../models/upgrade-request.schema';
 import { User } from '../models/user.schema';
 import { IUpgradeRequestService } from '../interfaces/upgrade-request.service.interface';
-import { NotificationService } from 'src/modules/notifications/services/notification.service';
+import { INotificationServiceToken } from 'src/modules/notifications/interfaces/notifications.service.interface';
+import type { INotificationService } from 'src/modules/notifications/interfaces/notifications.service.interface';
 import { NotificationType } from 'src/modules/notifications/models/notification.schema';
 import { Role } from 'src/common/enums/role.enum';
 import { type IPaymentService, IPaymentServiceToken } from 'src/common/payments/interfaces/payment.interface';
@@ -17,7 +18,7 @@ export class UpgradeRequestService implements IUpgradeRequestService {
         @InjectModel(UpgradeRequest.name) private upgradeRequestModel: Model<UpgradeRequest>,
         @InjectModel(User.name)
         private userModel: Model<User>,
-        private notificationService: NotificationService,
+        @Inject(INotificationServiceToken) private notificationService: INotificationService,
         @Inject(IPaymentServiceToken) private razorpayService: IPaymentService,
         @Inject(IPaymentsServiceToken) private paymentsService: IPaymentsService,
     ) { }
