@@ -5,45 +5,44 @@ import { InjectModel } from "@nestjs/mongoose";
 import { FilterQuery, Model, Types } from "mongoose";
 import { UserDocument, User } from '../../users/models/user.schema';
 import { WorkshopDocument, Workshop } from '../../workshops/models/workshop.schema';
-    import { CompetitionDocument, Competition } from '../../competitions/models/competition.schema';
-    import { PaymentDocument, Payment } from '../../payments/models/payment.schema';
-    import { UpgradeRequest, upgradeRequestSchema } from '../../users/models/upgrade-request.schema';
-    // import { Model } from 'mongoose';
-    
-    @Injectable()
-    export class AdminRepository {
-        constructor(
-            @InjectModel(Admin.name) 
-            private readonly _adminModel: Model<AdminDocument>,
-            @InjectModel(Payment.name) 
-            private readonly paymentModel: Model<Payment>,
-            @InjectModel(User.name)
-            private readonly _userModel: Model<UserDocument>,
-            @InjectModel(Workshop.name)
-            private readonly _workshopModel: Model<WorkshopDocument>,
-            @InjectModel(Competition.name)
-            private readonly _competitionModel: Model<CompetitionDocument>,
-            @InjectModel(Payment.name)
-            private readonly _paymentModel: Model<PaymentDocument>,
-            @InjectModel(UpgradeRequest.name)
-            private readonly _upgradeRequestModel: Model<any>,
-        ) { }
-        
-        async findOne(filter: FilterQuery<Admin>): Promise<Admin | null> {
-            return this._adminModel.findOne(filter).exec();
-        }
-        
-        async create(input: Partial<Admin>): Promise<Admin> {
-            return this._adminModel.create(input);
-        }
-        
-        async getDashboardAggregates(): Promise<any> {
-            const roles = ['dancer', 'instructor', 'organizer', 'client'];
-            const totalUsersByRolePromises = roles.map(role =>
-                this._userModel.countDocuments({ role: role }).exec()
-            );
-            const totalsByRole = await Promise.all(totalUsersByRolePromises);
-            
+import { CompetitionDocument, Competition } from '../../competitions/models/competition.schema';
+import { PaymentDocument, Payment } from '../../payments/models/payment.schema';
+import { UpgradeRequest, upgradeRequestSchema } from '../../users/models/upgrade-request.schema';
+
+@Injectable()
+export class AdminRepository {
+    constructor(
+        @InjectModel(Admin.name)
+        private readonly _adminModel: Model<AdminDocument>,
+        @InjectModel(Payment.name)
+        private readonly paymentModel: Model<Payment>,
+        @InjectModel(User.name)
+        private readonly _userModel: Model<UserDocument>,
+        @InjectModel(Workshop.name)
+        private readonly _workshopModel: Model<WorkshopDocument>,
+        @InjectModel(Competition.name)
+        private readonly _competitionModel: Model<CompetitionDocument>,
+        @InjectModel(Payment.name)
+        private readonly _paymentModel: Model<PaymentDocument>,
+        @InjectModel(UpgradeRequest.name)
+        private readonly _upgradeRequestModel: Model<any>,
+    ) { }
+
+    async findOne(filter: FilterQuery<Admin>): Promise<Admin | null> {
+        return this._adminModel.findOne(filter).exec();
+    }
+
+    async create(input: Partial<Admin>): Promise<Admin> {
+        return this._adminModel.create(input);
+    }
+
+    async getDashboardAggregates(): Promise<any> {
+        const roles = ['dancer', 'instructor', 'organizer', 'client'];
+        const totalUsersByRolePromises = roles.map(role =>
+            this._userModel.countDocuments({ role: role }).exec()
+        );
+        const totalsByRole = await Promise.all(totalUsersByRolePromises);
+
         const now = new Date();
         const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -58,9 +57,9 @@ import { WorkshopDocument, Workshop } from '../../workshops/models/workshop.sche
             { $group: { _id: null, total: { $sum: '$amount' } } }
         ] as any).exec();
         const totalRevenue = (revenueAgg[0] && revenueAgg[0].total) || 0;
-        
+
         const pendingApprovals = await this._upgradeRequestModel.countDocuments({ status: 'pending' }).exec();
-        
+
         return {
             totals: {
                 users: {
@@ -83,7 +82,7 @@ import { WorkshopDocument, Workshop } from '../../workshops/models/workshop.sche
             }
         };
     }
-    
+
     async getUserGrowth(startDate?: string, endDate?: string, interval: string = 'daily') {
         const start = startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const end = endDate ? new Date(endDate) : new Date();

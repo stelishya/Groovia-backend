@@ -4,13 +4,13 @@ import { ApiResponse } from 'src/common/models/common-response.model';
 import { NotificationService } from '../services/notification.service';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwtAuth.guard';
 import { ActiveUser } from 'src/common/decorators/active-user.decorator';
-import { INotificationServiceToken } from '../interfaces/notifications.service.interface';
+import { type INotificationService, INotificationServiceToken } from '../interfaces/notifications.service.interface';
 
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationsController {
     constructor(
-        @Inject(INotificationServiceToken) private readonly notificationService: NotificationService) { }
+        @Inject(INotificationServiceToken) private readonly notificationService: INotificationService) { }
 
     @Get('user/:userId')
     async getMyNotifications(

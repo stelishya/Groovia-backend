@@ -1,4 +1,4 @@
-import { ConsoleLogger, Injectable } from '@nestjs/common';
+import { BadRequestException, ConsoleLogger, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Document } from 'mongoose';
 import { Competition } from '../models/competition.schema';
@@ -13,8 +13,11 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
     super(competitionModel);
   }
 
-  // Basic CRUD methods
   async create(data: Partial<Competition>): Promise<Competition> {
+    // const comp= this.competitionModel.findAll({userId:data.userId, category:data.category,registrationDeadline:data.deadline})
+    // if(comp && comp.length>=1){
+    //   throw BadRequestException("Creating same category and deadline competition is not possible ")
+    // }
     const competition = new this.competitionModel(data);
     console.log("ith comp repo, competition : ", competition)
     return competition.save();
@@ -52,7 +55,6 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
       .exec();
   }
 
-  // Add any competition-specific repository methods here
   async findByOrganizer(organizerId: string, query: any = {}, sort: any = { createdAt: -1 }, skip?: number, limit?: number): Promise<{ data: Competition[], total: number }> {
     const finalQuery = { organizer_id: new Types.ObjectId(organizerId), ...query };
     const total = await this.competitionModel.countDocuments(finalQuery);

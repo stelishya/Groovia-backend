@@ -85,8 +85,6 @@ export class DancerService implements IDancerService {
         console.log("S3 Upload Result:", result);
         console.log("New Certificate Object:", newCertificate);
 
-        // Return the new certificate object without saving to DB yet
-        // The frontend will add this to the form state, and it will be saved when the user clicks "Save Changes"
         return newCertificate;
     }
 

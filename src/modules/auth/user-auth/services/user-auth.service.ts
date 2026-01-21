@@ -25,8 +25,7 @@ export class UserAuthService implements IUserAuthService {
         @Inject(IUserServiceToken) private readonly _userService: IUserService,
         @Inject(IHashingServiceToken) private readonly _hashingService: IHashingService,
         @Inject(IOtpServiceToken) private readonly _otpService: IOtpService,
-        @Inject(ICommonServiceToken)
-        private readonly _commonService: ICommonService,
+        @Inject(ICommonServiceToken) private readonly _commonService: ICommonService,
         @Inject(IMailServiceToken) private readonly _mailService: IMailService,
         private readonly _configService: ConfigService
     ) { }
@@ -72,13 +71,13 @@ export class UserAuthService implements IUserAuthService {
             const { username, email, role, password, confirmPassword, otp } = signupDto;
             if (otp) {
                 console.log("otp in user auth service", otp)
-                console.log(`[Signup Step 2] Attempting to verify OTP for ${email}`);
+                console.log(`verify otp for ${email}`);
                 const isValid = await this._otpService.verifyOtp(email, otp)
                 if (!isValid) {
-                    console.warn(`[Signup Step 2] Invalid OTP for ${email}`);
+                    console.warn(`Invalid OTP for ${email}`);
                     throw new HttpException('Invalid or expired OTP', HttpStatus.BAD_REQUEST)
                 }
-                console.log(`[Signup Step 2] OTP verified for ${email}. Attempting to create user.`);
+                console.log(`OTP verified for ${email}, creating user`);
                 try {
                     const hashedPassword = await this._hashingService.hashPassword(password);
                     // const user = await this._userService.createUser({ username, email, phone, role, password:hashedPassword });
@@ -93,19 +92,18 @@ export class UserAuthService implements IUserAuthService {
                         password: hashedPassword
                     });
                     console.log("user created", user)
-                    console.log(`[Signup Step 2] User created successfully for ${email}`);
+                    console.log(`user created successfully for ${email}`);
                     return {
                         success: true,
                         data: { user }
                     }
                 } catch (creationError) {
-                    console.error(`[Signup Step 2] User creation FAILED for ${email}`, creationError.stack);
+                    console.error(`user creation failed for ${email}`, creationError.stack);
                     throw new HttpException('Failed to create user after verification.', HttpStatus.INTERNAL_SERVER_ERROR);
                 }
             }
-            console.log(`[Signup Step 1] New signup request for ${email}`);
+            console.log(`new signup request for ${email}`);
             // console.log("without otp in user auth service")
-            // this._logger.log('new signup request')
             if (!username) {
                 throw new HttpException(
                     {
@@ -170,13 +168,10 @@ export class UserAuthService implements IUserAuthService {
             return {
                 success: true,
                 message: 'Otp sent successfully. Please verify to complete signup..',
-                // data:{
-                //     user
-                // }
             }
         } catch (error) {
             this._logger.error(`Signup process failed for ${signupDto.email}: ${error.message}`);
-            console.log("An internal error occured while signup.", HttpStatus.INTERNAL_SERVER_ERROR)
+            console.log("internal error occured while signup.", HttpStatus.INTERNAL_SERVER_ERROR)
 
             if (error instanceof HttpException) {
                 throw error;
@@ -229,26 +224,23 @@ export class UserAuthService implements IUserAuthService {
         const user = await this._userService.findByEmail(email);
         console.log("user in forgot password in user-auth.service.ts : ", user)
         if (!user) {
-            // To prevent email enumeration, we don't reveal that the user doesn't exist.
-            // We'll return a success-like message but do nothing.
             this._logger.warn(`Password reset attempt for non-existent email: ${email}`);
             return {
                 success: false, message: `Password reset attempt for non-existent email: ${email} has failed`,
-                // 'If an account with this email exists, a password reset link has been sent.' 
             };
         }
 
-        // 1. Generate a secure token
+        //generate a secure token
         const resetToken = crypto.randomBytes(32).toString('hex');
 
-        // 2. Hash the token before saving to the database for security
+        //hash token before saving to the database for security
         // const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
-        // 3. Set an expiration date (e.g., 10 minutes from now)
-        const tokenExpiry = new Date(Date.now() + 10 * 60 * 1000);
+        //set expiration date
+        const tokenExpiry = new Date(Date.now() + 10 * 60 * 1000);//10 mins
         this._logger.log(`Generated reset token for ${user.email}: ${resetToken}`);
 
-        // 4. Update the user document
+        //update user document
         const updateResult = await this._userService.updateOne(
             { _id: user._id },
             {
@@ -259,7 +251,7 @@ export class UserAuthService implements IUserAuthService {
         this._logger.log(`Update result for ${user.email}: ${JSON.stringify(updateResult)}`);
         console.log("Update result for", user.email, updateResult)
 
-        // 5. Create the reset URL and send the email
+        //create reset url and send email
         const resetUrl = `${this._configService.get('FRONTEND_URL')}/reset-password/${resetToken}`;
 
         try {
@@ -270,8 +262,6 @@ export class UserAuthService implements IUserAuthService {
             return { success: true, message: 'Password reset link sent successfully.' };
         } catch (error) {
             this._logger.error(`Failed to send password reset email to ${user.email}`, error);
-            // Even if email fails, don't reveal it to the client.
-            // Log the error and return a generic success message.
             return { success: true, message: 'If an account with this email exists, a password reset link has been sent.' };
         }
     }

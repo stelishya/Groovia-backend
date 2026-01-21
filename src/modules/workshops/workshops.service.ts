@@ -14,7 +14,7 @@ import type { IPaymentsService } from '../payments/interfaces/payments.service.i
 import { StorageUtils } from 'src/common/storage/utils/storage.utils';
 import { NotificationService } from '../notifications/services/notification.service';
 import { NotificationType } from '../notifications/models/notification.schema';
-import { INotificationServiceToken } from '../notifications/interfaces/notifications.service.interface';
+import { type INotificationService, INotificationServiceToken } from '../notifications/interfaces/notifications.service.interface';
 import { type IUserService, IUserServiceToken } from '../users/interfaces/services/user.service.interface';
 
 @Injectable()
@@ -25,7 +25,7 @@ export class WorkshopsService implements IWorkshopService {
         @Inject(IStorageServiceToken) private readonly awsS3Service: IStorageService,
         @Inject(IPaymentServiceToken) private readonly razorpayService: IPaymentService,
         @Inject(IPaymentsServiceToken) private readonly paymentsService: IPaymentsService,
-        @Inject(INotificationServiceToken) private readonly notificationService: NotificationService,
+        @Inject(INotificationServiceToken) private readonly notificationService: INotificationService,
         @Inject(IUserServiceToken) private readonly _usersService: IUserService,
     ) { }
 

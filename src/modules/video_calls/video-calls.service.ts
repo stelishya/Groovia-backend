@@ -15,8 +15,6 @@ export class VideoCallsService implements IVideoCallsService {
     constructor(
         @Inject(IWorkshopServiceToken)
         private readonly workshopService: IWorkshopService,
-        @Inject(ICompetitionServiceToken)
-        private readonly competitionService: ICompetitionService,
     ) { }
 
     async startSession(
@@ -26,10 +24,10 @@ export class VideoCallsService implements IVideoCallsService {
     ) {
         if (type === 'workshop') {
             return this.startWorkshopSession(sessionId, userId);
-        } else {
-            // TODO: Implement competition session start logic
-            throw new BadRequestException('Competition video calls not implemented yet');
-        }
+        } 
+        // else {
+        //     throw new BadRequestException('No competition video calls');
+        // }
     }
 
     private async startWorkshopSession(workshopId: string, instructorId: string) {
@@ -45,23 +43,10 @@ export class VideoCallsService implements IVideoCallsService {
             );
         }
 
-        // Check time window (15 mins before start)
         const now = new Date();
-        const startTime = new Date(workshop.startDate); // Assuming startDate holds the session time
+        const startTime = new Date(workshop.startDate); 
         const timeDiff = startTime.getTime() - now.getTime();
         const minutesDiff = timeDiff / (1000 * 60);
-
-        // Allow start if within 15 mins before or if already passed (but not too late? - Logic can be refined)
-        // if (minutesDiff > 15) {
-        //     throw new BadRequestException(
-        //         'Session can only be started 15 minutes before the scheduled time',
-        //     );
-        // }
-
-        // TODO: Ideally we should update the workshop status to 'LIVE' here.
-        // However, IWorkshopService might not expose a direct "updateStatus" method.
-        // For now, we return a success token/room signal.
-        // Real implementation would require updating the Workshop model via the service/repo.
 
         return {
             sessionId: workshopId,
@@ -78,7 +63,6 @@ export class VideoCallsService implements IVideoCallsService {
         if (type === 'workshop') {
             return this.joinWorkshopSession(sessionId, userId);
         }
-        throw new BadRequestException('Competition video calls not implemented yet');
     }
 
     private async joinWorkshopSession(workshopId: string, userId: string) {
@@ -87,7 +71,7 @@ export class VideoCallsService implements IVideoCallsService {
             throw new NotFoundException('Workshop not found');
         }
 
-        // Check if user is instructor
+        // check if user is instructor
         if (workshop.instructor._id.toString() === userId) {
             return {
                 sessionId: workshopId,
@@ -95,7 +79,7 @@ export class VideoCallsService implements IVideoCallsService {
             };
         }
 
-        // Check if user is enrolled participant
+        // check if user is enrolled participant
         const isEnrolled = workshop.participants.some(
             (p: any) =>
                 p.dancerId.toString() === userId && p.paymentStatus === 'paid',
@@ -174,7 +158,7 @@ export class VideoCallsService implements IVideoCallsService {
             const workshopDurationMs = new Date(workshop.endDate).getTime() - new Date(workshop.startDate).getTime();
             const workshopDurationMinutes = workshopDurationMs / (1000 * 60);
 
-            // Calculate attendance (70% threshold)
+            // Calculate attendance
             const attendancePercentage = (record.duration / workshopDurationMinutes) * 100;
             record.status = attendancePercentage >= 70 ? 'present' : 'absent';
 

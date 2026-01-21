@@ -13,7 +13,7 @@ import type { IPaymentsService } from '../../payments/interfaces/payments.servic
 import { StorageUtils } from 'src/common/storage/utils/storage.utils';
 import { NotificationService } from 'src/modules/notifications/services/notification.service';
 import { NotificationType } from 'src/modules/notifications/models/notification.schema';
-import { INotificationServiceToken } from 'src/modules/notifications/interfaces/notifications.service.interface';
+import { type INotificationService, INotificationServiceToken } from 'src/modules/notifications/interfaces/notifications.service.interface';
 import { type IUserService, IUserServiceToken } from 'src/modules/users/interfaces/services/user.service.interface';
 
 @Injectable()
@@ -24,7 +24,7 @@ export class CompetitionService implements ICompetitionService {
     @Inject(IStorageServiceToken) private readonly _storageService: IStorageService,
     @Inject(IPaymentServiceToken) private readonly _paymentService: IPaymentService,
     @Inject(IPaymentsServiceToken) private readonly _paymentsService: IPaymentsService,
-    @Inject(INotificationServiceToken) private readonly notificationService: NotificationService,
+    @Inject(INotificationServiceToken) private readonly notificationService: INotificationService,
     @Inject(IUserServiceToken) private readonly _usersService: IUserService,
   ) { }
 
