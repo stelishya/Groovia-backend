@@ -18,7 +18,10 @@ import { Roles } from '../../../common/decorators/roles.decorator';
 import { Role } from '../../../common/enums/role.enum';
 import { ActiveUser } from '../../../common/decorators/active-user.decorator';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
-import { type ICompetitionService, ICompetitionServiceToken } from '../interfaces/competition.service.interface';
+import {
+  type ICompetitionService,
+  ICompetitionServiceToken,
+} from '../interfaces/competition.service.interface';
 import { CreateCompetitionDto } from '../dto/create-competition.dto';
 import { UpdateCompetitionDto } from '../dto/update-competition.dto';
 

@@ -1,17 +1,46 @@
-import { forwardRef, Inject, Injectable, NotFoundException, } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Model, Types, FilterQuery, SortOrder, UpdateQuery } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { User, UserDocument } from '../../users/models/user.schema';
 import { EventDocument, Events } from '../models/events.schema';
-import { IClientService, PaymentInitiationResponse } from '../interfaces/client.interface';
+import {
+  IClientService,
+  PaymentInitiationResponse,
+} from '../interfaces/client.interface';
 import { NotificationType } from '../../notifications/models/notification.schema';
-import { type IUserService, IUserServiceToken, } from '../../users/interfaces/user.service.interface';
-import { type IStorageService, IStorageServiceToken, } from 'src/common/storage/interfaces/storage.interface';
-import { type IPaymentService, IPaymentServiceToken, } from 'src/common/payments/interfaces/payment.interface';
-import { type INotificationService, INotificationServiceToken } from '../../notifications/interfaces/notifications.service.interface';
-import { CreateRequestDto, updateBookingStatusDto, UpdateClientProfileDto, } from '../dto/client.dto';
-import { IPaymentsServiceToken, PaymentStatus, PaymentType, type IPaymentsService, } from '../../payments/interfaces/payments.service.interface';
+import {
+  type IUserService,
+  IUserServiceToken,
+} from '../../users/interfaces/user.service.interface';
+import {
+  type IStorageService,
+  IStorageServiceToken,
+} from 'src/common/storage/interfaces/storage.interface';
+import {
+  type IPaymentService,
+  IPaymentServiceToken,
+} from 'src/common/payments/interfaces/payment.interface';
+import {
+  type INotificationService,
+  INotificationServiceToken,
+} from '../../notifications/interfaces/notifications.service.interface';
+import {
+  CreateRequestDto,
+  updateBookingStatusDto,
+  UpdateClientProfileDto,
+} from '../dto/client.dto';
+import {
+  IPaymentsServiceToken,
+  PaymentStatus,
+  PaymentType,
+  type IPaymentsService,
+} from '../../payments/interfaces/payments.service.interface';
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 interface LeanEvent extends Omit<Events, '_id' | 'clientId' | 'dancerId'> {
@@ -44,7 +73,7 @@ export class ClientService implements IClientService {
     @Inject(IPaymentsServiceToken)
     private readonly _paymentsService: IPaymentsService,
     private readonly _configService: ConfigService,
-  ) { }
+  ) {}
 
   async uploadProfilePicture(
     userId: string,
@@ -91,7 +120,10 @@ export class ClientService implements IClientService {
     return event;
   }
 
-  async createEventBookingPayment(eventId: string, userId: string): Promise<PaymentInitiationResponse> {
+  async createEventBookingPayment(
+    eventId: string,
+    userId: string,
+  ): Promise<PaymentInitiationResponse> {
     const event = await this._eventModel.findById(eventId);
     if (!event) {
       throw new NotFoundException('Event not found');
@@ -190,7 +222,10 @@ export class ClientService implements IClientService {
     return updatedEvent;
   }
 
-  async markPaymentFailed(eventId: string, userId: string): Promise<Events | null> {
+  async markPaymentFailed(
+    eventId: string,
+    userId: string,
+  ): Promise<Events | null> {
     const updatedEvent = await this._eventModel.findOneAndUpdate(
       { _id: eventId, paymentStatus: { $ne: 'failed' } },
       {
@@ -375,8 +410,15 @@ export class ClientService implements IClientService {
     // event.status = statusDto.status;
     // const updatedEvent = await event.save();
     // Helper function to check if a field is populated
-    const isUserPopulated = (field: Types.ObjectId | User | UserDocument | Record<string, unknown>): field is (User & { _id: Types.ObjectId }) => {
-      return field && typeof field === 'object' && 'username' in field && '_id' in field;
+    const isUserPopulated = (
+      field: Types.ObjectId | User | UserDocument | Record<string, unknown>,
+    ): field is User & { _id: Types.ObjectId } => {
+      return (
+        field &&
+        typeof field === 'object' &&
+        'username' in field &&
+        '_id' in field
+      );
     };
 
     if (!isUserPopulated(event.clientId) || !isUserPopulated(event.dancerId)) {
@@ -498,7 +540,9 @@ export class ClientService implements IClientService {
     const userDoc = updatedUser as UserDocument;
     const userObject = userDoc.toObject ? userDoc.toObject() : userDoc;
 
-    const { password, ...userWithoutPassword } = userObject as User & { password?: string };
+    const { password, ...userWithoutPassword } = userObject as User & {
+      password?: string;
+    };
 
     return userWithoutPassword as User;
   }

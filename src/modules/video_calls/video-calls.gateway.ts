@@ -9,7 +9,13 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger, Inject } from '@nestjs/common';
-import { type AuthenticatedSocket, IVideoCallsServiceToken, type IVideoCallsService, WebRTCSignal, IceCandidate} from './interfaces/video-calls.service.interface';
+import {
+  type AuthenticatedSocket,
+  IVideoCallsServiceToken,
+  type IVideoCallsService,
+  WebRTCSignal,
+  IceCandidate,
+} from './interfaces/video-calls.service.interface';
 
 @WebSocketGateway({
   cors: {

@@ -2,12 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, PipelineStage, SortOrder, Types } from 'mongoose';
 import { Workshop, WorkshopDocument } from '../models/workshop.schema';
-import { PaginatedWorkshops, WorkshopFilters } from '../interfaces/workshop.service.interface';
+import {
+  PaginatedWorkshops,
+  WorkshopFilters,
+} from '../interfaces/workshop.service.interface';
 
 @Injectable()
 export class WorkshopsRepository {
   constructor(
-    @InjectModel(Workshop.name) 
+    @InjectModel(Workshop.name)
     private workshopModel: Model<WorkshopDocument>,
   ) {}
 
@@ -64,7 +67,7 @@ export class WorkshopsRepository {
     console.log('explore workshops:', workshops);
 
     return {
-      workshops:workshops as unknown as Workshop[],
+      workshops: workshops as unknown as Workshop[],
       total,
       page,
       limit,

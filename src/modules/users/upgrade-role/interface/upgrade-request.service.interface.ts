@@ -1,5 +1,14 @@
-import { CreateUpgradeRequestDto, PaymentConfirmationResponse, PaymentFailedResponse, PaymentOrderResponse, UserUpgradeRequestResponse } from '../dto/upgrade-request.dto';
-import { UpgradeRequest, UpgradeRequestDocument } from '../models/upgrade-request.schema';
+import {
+  CreateUpgradeRequestDto,
+  PaymentConfirmationResponse,
+  PaymentFailedResponse,
+  PaymentOrderResponse,
+  UserUpgradeRequestResponse,
+} from '../dto/upgrade-request.dto';
+import {
+  UpgradeRequest,
+  UpgradeRequestDocument,
+} from '../models/upgrade-request.schema';
 
 export const IUpgradeRequestServiceToken = 'IUpgradeRequestService';
 
@@ -8,8 +17,14 @@ export interface IUpgradeRequestService {
   getAllRequests(): Promise<UpgradeRequestDocument[]>;
   getPendingRequests(): Promise<UpgradeRequestDocument[]>;
   getRequestsByUser(userId: string): Promise<UserUpgradeRequestResponse[]>;
-  approveRequest(id: string, adminNote?: string): Promise<UpgradeRequestDocument>;
-  rejectRequest(id: string, adminNote?: string): Promise<UpgradeRequestDocument>;
+  approveRequest(
+    id: string,
+    adminNote?: string,
+  ): Promise<UpgradeRequestDocument>;
+  rejectRequest(
+    id: string,
+    adminNote?: string,
+  ): Promise<UpgradeRequestDocument>;
   createPaymentOrder(
     userId: string,
     upgradeRequestId: string,
@@ -25,11 +40,15 @@ export interface IUpgradeRequestService {
     razorpayOrderId?: string,
     razorpaySignature?: string,
   ): Promise<PaymentConfirmationResponse>;
-  upgradePaymentFailed(userId: string, requestId: string): Promise<PaymentFailedResponse>;
+  upgradePaymentFailed(
+    userId: string,
+    requestId: string,
+  ): Promise<PaymentFailedResponse>;
 }
 
 // Interface to type specific fields in the body that might come as strings
-export interface RequestBodyWithPotentialStrings extends CreateUpgradeRequestDto {
+export interface RequestBodyWithPotentialStrings
+  extends CreateUpgradeRequestDto {
   pastEvents?: string | number;
   message?: string;
 }

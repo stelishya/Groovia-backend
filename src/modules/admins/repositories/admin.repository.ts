@@ -3,8 +3,14 @@ import { Admin, AdminDocument } from '../models/admins.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, PipelineStage, Types } from 'mongoose';
 import { UserDocument, User } from '../../users/models/user.schema';
-import { WorkshopDocument, Workshop } from '../../workshops/models/workshop.schema';
-import { CompetitionDocument, Competition } from '../../competitions/models/competition.schema';
+import {
+  WorkshopDocument,
+  Workshop,
+} from '../../workshops/models/workshop.schema';
+import {
+  CompetitionDocument,
+  Competition,
+} from '../../competitions/models/competition.schema';
 import { PaymentDocument, Payment } from '../../payments/models/payment.schema';
 import { UpgradeRequest } from '../../users/upgrade-role/models/upgrade-request.schema';
 import { DashboardStats, PaymentResponse } from '../dto/admin.dto';
@@ -27,7 +33,7 @@ export class AdminRepository {
     private readonly _paymentModel: Model<PaymentDocument>,
     @InjectModel(UpgradeRequest.name)
     private readonly _upgradeRequestModel: Model<UpgradeRequestDocument>,
-  ) { }
+  ) {}
 
   async findOne(filter: FilterQuery<Admin>): Promise<Admin | null> {
     return this._adminModel.findOne(filter).exec();
@@ -60,7 +66,10 @@ export class AdminRepository {
       .exec();
 
     const revenueAgg = await this._paymentModel
-      .aggregate<{ _id: null; total: number }>([
+      .aggregate<{
+        _id: null;
+        total: number;
+      }>([
         { $match: { status: 'success' } },
         { $group: { _id: null, total: { $sum: '$amount' } } },
       ])
@@ -105,7 +114,7 @@ export class AdminRepository {
     const end = endDate ? new Date(endDate) : new Date();
     const dateFormat = interval === 'monthly' ? '%Y-%m' : '%Y-%m-%d';
 
-    const pipeline : PipelineStage[] = [
+    const pipeline: PipelineStage[] = [
       { $match: { createdAt: { $gte: start, $lte: end } } },
       {
         $group: {
@@ -116,7 +125,9 @@ export class AdminRepository {
       { $sort: { _id: 1 } },
     ];
 
-    const result = await this._userModel.aggregate<{ _id: string; count: number }>(pipeline).exec();
+    const result = await this._userModel
+      .aggregate<{ _id: string; count: number }>(pipeline)
+      .exec();
     return result.map((r: { _id: string; count: number }) => ({
       label: r._id,
       value: r.count,
@@ -134,7 +145,7 @@ export class AdminRepository {
     const end = endDate ? new Date(endDate) : new Date();
     const dateFormat = interval === 'monthly' ? '%Y-%m' : '%Y-%m-%d';
 
-    const pipeline : PipelineStage[] = [
+    const pipeline: PipelineStage[] = [
       { $match: { status: 'success', createdAt: { $gte: start, $lte: end } } },
       {
         $group: {
@@ -145,7 +156,9 @@ export class AdminRepository {
       { $sort: { _id: 1 } },
     ];
 
-    const result = await this._paymentModel.aggregate<{ _id: string; total: number }>(pipeline).exec();
+    const result = await this._paymentModel
+      .aggregate<{ _id: string; total: number }>(pipeline)
+      .exec();
     return result.map((r: { _id: string; total: number }) => ({
       label: r._id,
       value: r.total,
@@ -206,10 +219,7 @@ export class AdminRepository {
             .lean();
           relatedEntityName = workshop?.title || '';
           relatedEntityId = String(metadata.workshopId);
-        } else if (
-          p.paymentType === 'competition' &&
-          metadata?.competitionId
-        ) {
+        } else if (p.paymentType === 'competition' && metadata?.competitionId) {
           const competition = await this._competitionModel
             .findById(metadata.competitionId)
             .select('title')
@@ -223,9 +233,7 @@ export class AdminRepository {
             : '';
         } else if (p.paymentType === 'event_booking') {
           relatedEntityName = 'Event';
-          relatedEntityId = metadata?.eventId
-            ? String(metadata.eventId)
-            : '';
+          relatedEntityId = metadata?.eventId ? String(metadata.eventId) : '';
         }
 
         // Use timestamps from mongoose
@@ -251,7 +259,9 @@ export class AdminRepository {
           'username' in p.userId &&
           !(p.userId instanceof Types.ObjectId)
         ) {
-          const populatedUser = p.userId as unknown as User & { _id: Types.ObjectId };
+          const populatedUser = p.userId as unknown as User & {
+            _id: Types.ObjectId;
+          };
           user = {
             _id: String(populatedUser._id),
             username: populatedUser.username,
@@ -267,20 +277,21 @@ export class AdminRepository {
           _id: String(p._id),
           referenceId: p.referenceId,
           orderId: p.orderId,
-          createdAt: createdAt || new Date(), 
+          createdAt: createdAt || new Date(),
           user,
           paymentType: p.paymentType,
           relatedEntityName,
           relatedEntityId,
           amount: p.amount,
           status: p.status,
-          failureReason: p.metadata?.failureReason || '',
-          refundStatus: p.metadata?.refundStatus || '',
-          refundAmount: p.metadata?.refundAmount || 0,
-          payoutStatus: p.metadata?.payoutStatus || '',
-          payoutDate: p.metadata?.payoutDate || '',
-          beneficiary: p.metadata?.beneficiary || '',
-          settlementReferenceId: p.metadata?.settlementReferenceId || '',
+          failureReason: (p.metadata?.failureReason as string) || '',
+          refundStatus: (p.metadata?.refundStatus as string) || '',
+          refundAmount: (p.metadata?.refundAmount as number) || 0,
+          payoutStatus: (p.metadata?.payoutStatus as string) || '',
+          payoutDate: (p.metadata?.payoutDate as string) || '',
+          beneficiary: (p.metadata?.beneficiary as string) || '',
+          settlementReferenceId:
+            (p.metadata?.settlementReferenceId as string) || '',
         };
       }),
     );

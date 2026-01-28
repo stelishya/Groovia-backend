@@ -1,6 +1,10 @@
 import { User, UserDocument } from '../../users/models/user.schema';
-import {CreateRequestDto, updateBookingStatusDto, UpdateClientProfileDto} from '../dto/client.dto';
-import { Events, } from '../models/events.schema';
+import {
+  CreateRequestDto,
+  updateBookingStatusDto,
+  UpdateClientProfileDto,
+} from '../dto/client.dto';
+import { Events } from '../models/events.schema';
 
 export const IClientInterfaceToken = 'IClientService';
 
@@ -36,7 +40,10 @@ export interface IClientService {
     userId: string,
     updateData: UpdateClientProfileDto,
   ): Promise<User>;
-  createEventBookingPayment(eventId: string, userId: string): Promise<PaymentInitiationResponse>;
+  createEventBookingPayment(
+    eventId: string,
+    userId: string,
+  ): Promise<PaymentInitiationResponse>;
   verifyEventBookingPayment(
     eventId: string,
     paymentDetails: {

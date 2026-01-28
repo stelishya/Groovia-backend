@@ -22,10 +22,14 @@ function IsDateInFuture(validationOptions?: ValidationOptions) {
       validator: {
         validate(value: unknown, args: ValidationArguments) {
           if (!value) return false;
-          if (typeof value !== 'string' && typeof value !== 'number' && !(value instanceof Date)) {
+          if (
+            typeof value !== 'string' &&
+            typeof value !== 'number' &&
+            !(value instanceof Date)
+          ) {
             return false;
           }
-          const inputDate = new Date(value as string | number | Date);
+          const inputDate = new Date(value);
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           return inputDate > today;

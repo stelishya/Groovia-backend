@@ -14,7 +14,7 @@ export class TokenService {
   constructor(
     private readonly _jwtService: JwtService,
     private readonly _configService: ConfigService,
-  ) { }
+  ) {}
 
   async signAccessToken(payload: TokenPayload): Promise<string> {
     console.log('signAccessToken in token.service.ts !!');
@@ -38,7 +38,9 @@ export class TokenService {
   private _getJwtOptions(expiresInKey: string): JwtSignOptions {
     const expiresIn = this._configService.get<string>(expiresInKey);
     if (!expiresIn) {
-      throw new Error(`JWT configuration ${expiresInKey} is required but not set`);
+      throw new Error(
+        `JWT configuration ${expiresInKey} is required but not set`,
+      );
     }
     return {
       secret: this._configService.get<string>('JWT_SECRET'),

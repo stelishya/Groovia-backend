@@ -8,31 +8,31 @@ import { DashboardStats, PaymentResponse } from '../dto/admin.dto';
 export const IAdminServiceToken = Symbol('IAdminService');
 
 export interface IAdminService {
-    findOne(filter: Partial<Admin>): Promise<Admin | null>;
-    createAdmin(adminData: Partial<Admin>): Promise<Admin>;
-    getDashboard(): Promise<DashboardStats>;
-    getAllUsers(
-        query: GetAllUsersQueryDto,
-    ): Promise<{ users: User[]; total: number }>;
-    blockUser(userId: string): Promise<SuccessResponseDto>;
-    getUserGrowth(
-        startDate?: string,
-        endDate?: string,
-        interval?: string,
-    ): Promise<{ label: string; value: number }[]>;
-    getRevenueTrend(
-        startDate?: string,
-        endDate?: string,
-        interval?: string,
-    ): Promise<{ label: string; value: number }[]>;
-    getPayments(query: {
-        page?: number;
-        limit?: number;
-        sortBy?: string;
-        sortOrder?: 'asc' | 'desc';
-        status?: string;
-        type?: string;
-        dateFrom?: string;
-        dateTo?: string;
-    }): Promise<{ payments: PaymentResponse[]; total: number }>;
+  findOne(filter: Partial<Admin>): Promise<Admin | null>;
+  createAdmin(adminData: Partial<Admin>): Promise<Admin>;
+  getDashboard(): Promise<DashboardStats>;
+  getAllUsers(
+    query: GetAllUsersQueryDto,
+  ): Promise<{ users: User[]; total: number }>;
+  blockUser(userId: string): Promise<SuccessResponseDto>;
+  getUserGrowth(
+    startDate?: string,
+    endDate?: string,
+    interval?: string,
+  ): Promise<{ label: string; value: number }[]>;
+  getRevenueTrend(
+    startDate?: string,
+    endDate?: string,
+    interval?: string,
+  ): Promise<{ label: string; value: number }[]>;
+  getPayments(query: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+    status?: string;
+    type?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): Promise<{ payments: PaymentResponse[]; total: number }>;
 }

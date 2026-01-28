@@ -1,6 +1,10 @@
-import { Socket } from "socket.io";
-import { ServiceOperationResult, SessionAuthToken, SessionResponse } from "../dto/video-call.dto";
-import { Types } from "mongoose";
+import { Socket } from 'socket.io';
+import {
+  ServiceOperationResult,
+  SessionAuthToken,
+  SessionResponse,
+} from '../dto/video-call.dto';
+import { Types } from 'mongoose';
 
 export const IVideoCallsServiceToken = Symbol('IVideoCallsService');
 
@@ -19,8 +23,14 @@ export interface IVideoCallsService {
 
   validateToken(token: string): SessionAuthToken | null;
 
-  recordJoin(workshopId: string, userId: string): Promise<ServiceOperationResult>;
-  recordLeave(workshopId: string, userId: string): Promise<ServiceOperationResult>;
+  recordJoin(
+    workshopId: string,
+    userId: string,
+  ): Promise<ServiceOperationResult>;
+  recordLeave(
+    workshopId: string,
+    userId: string,
+  ): Promise<ServiceOperationResult>;
 }
 
 export interface AuthenticatedSocket extends Socket {

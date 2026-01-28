@@ -1,9 +1,28 @@
 import { Types } from 'mongoose';
-import { BadRequestException, Inject, Injectable, NotFoundException, UnauthorizedException, } from '@nestjs/common';
-import { type IWorkshopService, IWorkshopServiceToken, } from '../workshops/interfaces/workshop.service.interface';
-import { type ICompetitionService, ICompetitionServiceToken, } from '../competitions/interfaces/competition.service.interface';
-import { AttendanceRecord, IVideoCallsService } from './interfaces/video-calls.service.interface';
-import { ServiceOperationResult, SessionAuthToken, SessionResponse } from './dto/video-call.dto';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import {
+  type IWorkshopService,
+  IWorkshopServiceToken,
+} from '../workshops/interfaces/workshop.service.interface';
+import {
+  type ICompetitionService,
+  ICompetitionServiceToken,
+} from '../competitions/interfaces/competition.service.interface';
+import {
+  AttendanceRecord,
+  IVideoCallsService,
+} from './interfaces/video-calls.service.interface';
+import {
+  ServiceOperationResult,
+  SessionAuthToken,
+  SessionResponse,
+} from './dto/video-call.dto';
 import { WorkshopDocument } from '../workshops/models/workshop.schema';
 import { Participant } from './interfaces/video-calls.service.interface';
 
@@ -24,14 +43,17 @@ export class VideoCallsService implements IVideoCallsService {
     if (type === 'workshop') {
       return this.startWorkshopSession(sessionId, userId);
     } else {
-      throw new BadRequestException(
-        'Competition video calls not implemented',
-      );
+      throw new BadRequestException('Competition video calls not implemented');
     }
   }
 
-  private async startWorkshopSession(workshopId: string, instructorId: string): Promise<SessionResponse> {
-    const workshop = (await this.workshopService.findOne(workshopId)) as WorkshopDocument;
+  private async startWorkshopSession(
+    workshopId: string,
+    instructorId: string,
+  ): Promise<SessionResponse> {
+    const workshop = (await this.workshopService.findOne(
+      workshopId,
+    )) as WorkshopDocument;
 
     if (!workshop) {
       throw new NotFoundException('Workshop not found');
@@ -42,7 +64,7 @@ export class VideoCallsService implements IVideoCallsService {
       workshop.instructor instanceof Types.ObjectId
         ? workshop.instructor.toString()
         : (workshop.instructor as unknown as Types.ObjectId)._id.toString();
-        
+
     if (workshopInstructorId !== instructorId) {
       throw new UnauthorizedException(
         'Only the instructor can start this session',
@@ -51,7 +73,7 @@ export class VideoCallsService implements IVideoCallsService {
 
     // Check time window (15 mins before start)
     const now = new Date();
-    const startTime = new Date(workshop.startDate); 
+    const startTime = new Date(workshop.startDate);
     const timeDiff = startTime.getTime() - now.getTime();
     const minutesDiff = timeDiff / (1000 * 60);
 
@@ -60,7 +82,6 @@ export class VideoCallsService implements IVideoCallsService {
     //         'Session can only be started 15 minutes before the scheduled time',
     //     );
     // }
-
 
     return {
       sessionId: workshopId,
@@ -77,13 +98,16 @@ export class VideoCallsService implements IVideoCallsService {
     if (type === 'workshop') {
       return this.joinWorkshopSession(sessionId, userId);
     }
-    throw new BadRequestException(
-      'Competition video calls not implemented',
-    );
+    throw new BadRequestException('Competition video calls not implemented');
   }
 
-  private async joinWorkshopSession(workshopId: string, userId: string): Promise<SessionResponse> {
-    const workshop = (await this.workshopService.findOne(workshopId)) as WorkshopDocument;
+  private async joinWorkshopSession(
+    workshopId: string,
+    userId: string,
+  ): Promise<SessionResponse> {
+    const workshop = (await this.workshopService.findOne(
+      workshopId,
+    )) as WorkshopDocument;
     if (!workshop) {
       throw new NotFoundException('Workshop not found');
     }
@@ -107,8 +131,7 @@ export class VideoCallsService implements IVideoCallsService {
     const participants = workshop.participants as unknown as Participant[];
 
     const isEnrolled = participants.some(
-      (p) =>
-        p.dancerId.toString() === userId && p.paymentStatus === 'paid',
+      (p) => p.dancerId.toString() === userId && p.paymentStatus === 'paid',
     );
 
     if (!isEnrolled) {
@@ -131,12 +154,17 @@ export class VideoCallsService implements IVideoCallsService {
       userId,
       role,
       timestamp: Date.now(),
-    }
+    };
     return Buffer.from(JSON.stringify(payload)).toString('base64');
   }
 
-  async recordJoin(workshopId: string, userId: string): Promise<ServiceOperationResult> {
-    const workshop = (await this.workshopService.findOne(workshopId)) as WorkshopDocument;
+  async recordJoin(
+    workshopId: string,
+    userId: string,
+  ): Promise<ServiceOperationResult> {
+    const workshop = (await this.workshopService.findOne(
+      workshopId,
+    )) as WorkshopDocument;
     if (!workshop) {
       throw new NotFoundException('Workshop not found');
     }
@@ -176,14 +204,19 @@ export class VideoCallsService implements IVideoCallsService {
     return { success: true };
   }
 
-  async recordLeave(workshopId: string, userId: string): Promise<ServiceOperationResult> {
-    const workshop = (await this.workshopService.findOne(workshopId)) as WorkshopDocument;
+  async recordLeave(
+    workshopId: string,
+    userId: string,
+  ): Promise<ServiceOperationResult> {
+    const workshop = (await this.workshopService.findOne(
+      workshopId,
+    )) as WorkshopDocument;
     if (!workshop) {
       throw new NotFoundException('Workshop not found');
     }
 
     if (!workshop.attendanceRecords) {
-        return { success: true };
+      return { success: true };
     }
 
     const records = workshop.attendanceRecords as unknown as AttendanceRecord[];

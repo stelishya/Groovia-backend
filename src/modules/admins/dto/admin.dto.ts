@@ -23,48 +23,48 @@ export interface DashboardResponseDto {
 }
 
 export interface DashboardStats {
-    totals: {
-        users: {
-            total: number;
-            byRole: {
-                dancer: number;
-                instructor: number;
-                organizer: number;
-                client: number;
-            };
-        };
-        workshops: number;
-        competitions: number;
-        revenue: number;
-        pendingApprovals: number;
+  totals: {
+    users: {
+      total: number;
+      byRole: {
+        dancer: number;
+        instructor: number;
+        organizer: number;
+        client: number;
+      };
     };
-    active: {
-        today: number;
-        thisWeek: number;
-    };
+    workshops: number;
+    competitions: number;
+    revenue: number;
+    pendingApprovals: number;
+  };
+  active: {
+    today: number;
+    thisWeek: number;
+  };
 }
 
 export interface PaymentResponse {
+  _id: string;
+  referenceId: string;
+  orderId: string;
+  createdAt: Date;
+  user?: {
     _id: string;
-    referenceId: string;
-    orderId: string;
-    createdAt: Date;
-    user?: {
-        _id: string;
-        username?: string;
-        email?: string;
-        role?: string;
-    };
-    paymentType: string;
-    relatedEntityName: string;
-    relatedEntityId: string;
-    amount: number;
-    status: string;
-    failureReason?: string;
-    refundStatus?: string;
-    refundAmount?: number;
-    payoutStatus?: string;
-    payoutDate?: string;
-    beneficiary?: string;
-    settlementReferenceId?: string;
+    username?: string;
+    email?: string;
+    role?: string;
+  };
+  paymentType: string;
+  relatedEntityName: string;
+  relatedEntityId: string;
+  amount: number;
+  status: string;
+  failureReason?: string;
+  refundStatus?: string;
+  refundAmount?: number;
+  payoutStatus?: string;
+  payoutDate?: string;
+  beneficiary?: string;
+  settlementReferenceId?: string;
 }

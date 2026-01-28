@@ -18,7 +18,8 @@ import { BaseRepository } from 'src/common/repositories/base.repo';
 @Injectable()
 export class UserRepository
   extends BaseRepository<User, UserDocument>
-  implements IUserRepository {
+  implements IUserRepository
+{
   constructor(
     @InjectModel(User.name) private readonly _userModel: Model<UserDocument>,
   ) {

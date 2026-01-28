@@ -16,7 +16,7 @@ export class NotificationRepository implements INotificationRepo {
   constructor(
     @InjectModel(Notification.name)
     private notificationModel: Model<NotificationDocument>,
-  ) { }
+  ) {}
 
   async create(
     userId: Types.ObjectId,

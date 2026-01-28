@@ -13,7 +13,11 @@ import type { Request, Response } from 'express';
 import { User } from '../../../users/models/user.schema';
 import type { IUserAuthService } from '../interfaces/user-auth.service.interface';
 import { IUserAuthServiceToken } from '../interfaces/user-auth.service.interface';
-import type { VerifyOtpDto, SignupDto, ChangePasswordDto } from '../dto/user-auth.dto';
+import type {
+  VerifyOtpDto,
+  SignupDto,
+  ChangePasswordDto,
+} from '../dto/user-auth.dto';
 import { Public } from '../../../../common/decorators/public.decorator';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
 
@@ -24,7 +28,7 @@ export class UserAuthController {
   constructor(
     @Inject(IUserAuthServiceToken)
     private readonly _userAuthService: IUserAuthService,
-  ) { }
+  ) {}
 
   @Public()
   @Post('login')
@@ -108,7 +112,10 @@ export class UserAuthController {
   @UseGuards(JwtAuthGuard)
   @Post('change-password')
   async changePassword(
-    @Req() req: Request & { user: { userId: string; email: string; username: string } },
+    @Req()
+    req: Request & {
+      user: { userId: string; email: string; username: string };
+    },
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
     return await this._userAuthService.changePassword(

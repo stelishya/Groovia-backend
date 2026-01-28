@@ -12,7 +12,13 @@ import {
   type IWorkshopRepo,
   IWorkshopRepoToken,
 } from './interfaces/workshop.repo.interface';
-import { BookingConfirmationResponse, IWorkshopService, PaginatedBookedWorkshops, PaymentInitiationResponse, WorkshopParticipant } from './interfaces/workshop.service.interface';
+import {
+  BookingConfirmationResponse,
+  IWorkshopService,
+  PaginatedBookedWorkshops,
+  PaymentInitiationResponse,
+  WorkshopParticipant,
+} from './interfaces/workshop.service.interface';
 import {
   type IStorageService,
   IStorageServiceToken,
@@ -53,7 +59,7 @@ export class WorkshopsService implements IWorkshopService {
     private readonly paymentsService: IPaymentsService,
     @Inject(INotificationServiceToken)
     private readonly notificationService: INotificationService,
-    @Inject(IUserServiceToken) 
+    @Inject(IUserServiceToken)
     private readonly _usersService: IUserService,
   ) {}
 
@@ -73,7 +79,7 @@ export class WorkshopsService implements IWorkshopService {
         typeof body.sessions === 'string'
           ? JSON.parse(body.sessions)
           : body.sessions,
-      posterImage: '', 
+      posterImage: '',
     };
 
     let posterImage = createWorkshopDto.posterImage;
@@ -167,9 +173,9 @@ export class WorkshopsService implements IWorkshopService {
     file: Express.Multer.File,
   ): Promise<Workshop> {
     const updateData: Partial<CreateWorkshopDto> & {
-      posterImage?:string;
-      participants?:string | WorkshopParticipant[];
-      sessions?:string | unknown[];
+      posterImage?: string;
+      participants?: string | WorkshopParticipant[];
+      sessions?: string | unknown[];
     } = { ...updateWorkshopDto };
 
     // Parse sessions if it's a string
@@ -182,7 +188,7 @@ export class WorkshopsService implements IWorkshopService {
       }
     }
 
-    // Parse participants if it's a string 
+    // Parse participants if it's a string
     if (
       updateData.participants &&
       typeof updateData.participants === 'string'
@@ -260,7 +266,8 @@ export class WorkshopsService implements IWorkshopService {
       workshop.participants = [];
     }
 
-    const participants = workshop.participants as unknown as WorkshopParticipant[];
+    const participants =
+      workshop.participants as unknown as WorkshopParticipant[];
 
     // Check if user already has a participant entry (e.g., from a failed payment)
     const participantIndex = participants.findIndex(
@@ -279,7 +286,9 @@ export class WorkshopsService implements IWorkshopService {
         attendance: false,
         registeredAt: new Date(),
       };
-      (workshop.participants as unknown as WorkshopParticipant[]).push(newParticipant);
+      (workshop.participants as unknown as WorkshopParticipant[]).push(
+        newParticipant,
+      );
       // workshop.participants.push({
       //   dancerId: new Types.ObjectId(userId),
       //   paymentStatus: 'paid',
@@ -306,10 +315,10 @@ export class WorkshopsService implements IWorkshopService {
     //   (p) => p.dancerId.toString() === userId,
     // )?.dancerId;
     // const user = await this._usersService.findById(dancerId ?? '');
-     // Handle User fetching safely
-    const currentParticipant = (workshop.participants as unknown as WorkshopParticipant[]).find(
-      (p) => p.dancerId.toString() === userId,
-    );
+    // Handle User fetching safely
+    const currentParticipant = (
+      workshop.participants as unknown as WorkshopParticipant[]
+    ).find((p) => p.dancerId.toString() === userId);
     const user = await this._usersService.findById(
       currentParticipant?.dancerId.toString() ?? '',
     );
@@ -320,9 +329,10 @@ export class WorkshopsService implements IWorkshopService {
       instructorId = workshop.instructor;
     } else {
       // Assuming populated
-      instructorId = (workshop.instructor as unknown as User & { _id: Types.ObjectId })._id;
+      instructorId = (
+        workshop.instructor as unknown as User & { _id: Types.ObjectId }
+      )._id;
     }
-
 
     await this.notificationService.createNotification(
       instructorId,
@@ -349,16 +359,14 @@ for your workshop: ${workshop.title} `,
       page?: string;
       limit?: string;
     },
-  ): Promise<
-  PaginatedBookedWorkshops
-  // {
-  //   workshops: Workshop[];
-  //   total: number;
-  //   page: number;
-  //   limit: number;
-  //   totalPages: number;
-  // }
-  > {
+  ): Promise<PaginatedBookedWorkshops> {
+    // {
+    //   workshops: Workshop[];
+    //   total: number;
+    //   page: number;
+    //   limit: number;
+    //   totalPages: number;
+    // }
     // Parse pagination in service layer
     const page = options.page ? parseInt(options.page, 10) : 1;
     const limit = options.limit ? parseInt(options.limit, 10) : 10;
@@ -470,28 +478,30 @@ for your workshop: ${workshop.title} `,
         workshop.posterImage,
       );
     }
-     // Type Guard for Populated Instructor
+    // Type Guard for Populated Instructor
     const isInstructorPopulated = (
-      instructor: unknown
+      instructor: unknown,
     ): instructor is { profileImage: string } => {
       return (
-        !!instructor && 
-        typeof instructor === 'object' && 
+        !!instructor &&
+        typeof instructor === 'object' &&
         'profileImage' in instructor
       );
     };
-    
+
     if (workshop.instructor && isInstructorPopulated(workshop.instructor)) {
-      workshop.instructor.profileImage =
-        await StorageUtils.getSignedUrl(
-          this.awsS3Service,
-          workshop.instructor.profileImage,
-        );
+      workshop.instructor.profileImage = await StorageUtils.getSignedUrl(
+        this.awsS3Service,
+        workshop.instructor.profileImage,
+      );
     }
     return workshop;
   }
 
-  async initiateWorkshopBooking(workshopId: string, userId: string):Promise<PaymentInitiationResponse> {
+  async initiateWorkshopBooking(
+    workshopId: string,
+    userId: string,
+  ): Promise<PaymentInitiationResponse> {
     const workshop = await this._workshopRepository.findById(workshopId);
 
     if (!workshop) {
@@ -499,11 +509,11 @@ for your workshop: ${workshop.title} `,
     }
 
     // Cast participants to safe type
-    const participants = (workshop.participants || []) as unknown as WorkshopParticipant[];
+    const participants = (workshop.participants ||
+      []) as unknown as WorkshopParticipant[];
 
     // Check if workshop is full
-    if (participants.length >= workshop.maxParticipants
-    ) {
+    if (participants.length >= workshop.maxParticipants) {
       throw new BadRequestException('Workshop is full');
     }
 
@@ -520,7 +530,7 @@ for your workshop: ${workshop.title} `,
 
     // Check if registration deadline has passed
     if (new Date() > new Date(workshop.deadline)) {
-        throw new BadRequestException('Registration deadline has passed');
+      throw new BadRequestException('Registration deadline has passed');
     }
 
     // Create Razorpay Order
@@ -554,7 +564,8 @@ for your workshop: ${workshop.title} `,
       workshop.participants = [];
     }
 
-    const participants = workshop.participants as unknown as WorkshopParticipant[];
+    const participants =
+      workshop.participants as unknown as WorkshopParticipant[];
 
     // Find if user already has a participant entry
     const participantIndex = participants?.findIndex(
@@ -571,7 +582,9 @@ for your workshop: ${workshop.title} `,
         attendance: false,
         registeredAt: new Date(),
       };
-      (workshop.participants as unknown as WorkshopParticipant[]).push(newParticipant);
+      (workshop.participants as unknown as WorkshopParticipant[]).push(
+        newParticipant,
+      );
       // Add new participant with failed status
       // if (!workshop.participants) {
       //   workshop.participants = [];

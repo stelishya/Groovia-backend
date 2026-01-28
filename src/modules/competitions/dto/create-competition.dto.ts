@@ -88,12 +88,12 @@ export class CreateCompetitionDto {
 }
 export interface PopulatedUser {
   _id: Types.ObjectId;
-  profileImage?: string|undefined;
+  profileImage?: string | undefined;
   username?: string;
   email?: string;
 }
 export interface RegisteredDancerItem {
-  dancerId: Types.ObjectId | PopulatedUser; 
+  dancerId: Types.ObjectId | PopulatedUser;
   paymentStatus: string;
   score: number;
   registeredAt: Date;

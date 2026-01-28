@@ -8,7 +8,10 @@ import { Admin } from './models/admins.schema';
 import { Payment, PaymentDocument } from '../payments/models/payment.schema';
 import { User } from '../users/models/user.schema';
 import { GetAllUsersQueryDto, DashboardResponseDto } from './dto/admin.dto';
-import { type IUserService, IUserServiceToken} from '../users/interfaces/user.service.interface';
+import {
+  type IUserService,
+  IUserServiceToken,
+} from '../users/interfaces/user.service.interface';
 import { Types } from 'mongoose';
 import { SuccessResponseDto } from '../users/dto/user.dto';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
@@ -23,7 +26,7 @@ export class AdminsService implements IAdminService {
     // @Inject('AdminRepository') private readonly adminRepo: IAdminRepo,
     @Inject(IUserServiceToken)
     private readonly _userService: IUserService,
-  ) { }
+  ) {}
 
   async findOne(filter: Partial<Admin>): Promise<Admin | null> {
     try {

@@ -91,7 +91,10 @@ export interface ICompetitionService {
     dancerId: string,
     score: number,
   ): Promise<Competition>;
-  finalizeResults(competitionId: string, results: Record<string, unknown>[]): Promise<Competition>;
+  finalizeResults(
+    competitionId: string,
+    results: Record<string, unknown>[],
+  ): Promise<Competition>;
 
   // Payment Logic
   initiatePayment(
@@ -99,7 +102,15 @@ export interface ICompetitionService {
     dancerId: string,
     amount: number,
     currency: string,
-  ): Promise<{ competition: Competition; amount: number; currency: string; orderId: string } | undefined>;
+  ): Promise<
+    | {
+        competition: Competition;
+        amount: number;
+        currency: string;
+        orderId: string;
+      }
+    | undefined
+  >;
   confirmPayment(
     competitionId: string,
     dancerId: string,

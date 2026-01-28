@@ -7,7 +7,11 @@ import {
 import { Types, FilterQuery, SortOrder, PipelineStage } from 'mongoose';
 import { CompetitionRepository } from '../repositories/competition.repository';
 import { CompetitionDocument } from '../models/competition.schema';
-import { CreateCompetitionDto, PopulatedUser, RegisteredDancerItem } from '../dto/create-competition.dto';
+import {
+  CreateCompetitionDto,
+  PopulatedUser,
+  RegisteredDancerItem,
+} from '../dto/create-competition.dto';
 import { UpdateCompetitionDto } from '../dto/update-competition.dto';
 import { Competition, CompetitionStatus } from '../models/competition.schema';
 import {
@@ -55,7 +59,7 @@ export class CompetitionService implements ICompetitionService {
     @Inject(INotificationServiceToken)
     private readonly notificationService: INotificationService,
     @Inject(IUserServiceToken) private readonly _usersService: IUserService,
-  ) { }
+  ) {}
 
   async create(
     body: CreateCompetitionDto,
@@ -333,7 +337,7 @@ export class CompetitionService implements ICompetitionService {
             typeof typedDancer.dancerId === 'object' &&
             'profileImage' in typedDancer.dancerId
           ) {
-            const dancer = typedDancer.dancerId as PopulatedUser;
+            const dancer = typedDancer.dancerId;
             if (dancer.profileImage) {
               dancer.profileImage = await StorageUtils.getSignedUrl(
                 this._storageService,

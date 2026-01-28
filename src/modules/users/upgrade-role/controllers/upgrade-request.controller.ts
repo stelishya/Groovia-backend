@@ -85,9 +85,10 @@ export class UpgradeRequestController {
     const certificateFile = files?.certificate?.[0];
     const licenseFile = files?.licenseDocument?.[0];
 
-    const danceStyles = typeof body.danceStyles === 'string'
-      ? JSON.parse(body.danceStyles)
-      : body.danceStyles;
+    const danceStyles =
+      typeof body.danceStyles === 'string'
+        ? JSON.parse(body.danceStyles)
+        : body.danceStyles;
 
     const pastEventsCount = body.pastEventsCount
       ? Number(body.pastEventsCount)
@@ -95,7 +96,8 @@ export class UpgradeRequestController {
         ? Number(body.pastEvents)
         : undefined;
 
-    const availableForWorkshops = body.availableForWorkshops !== undefined
+    const availableForWorkshops =
+      body.availableForWorkshops !== undefined
         ? String(body.availableForWorkshops) === 'true'
         : undefined;
 

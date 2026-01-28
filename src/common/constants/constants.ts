@@ -6,9 +6,11 @@ export const MESSAGES = {
   LIKE_STATUS_UPDATED_SUCCESSFULLY: 'Like status updated successfully',
   LOGOUT_SUCCESSFUL: 'Logout successful',
   DANCERS_RETRIEVED_SUCCESSFULLY: 'Dancers retrieved successfully',
-  EVENT_REQUESTS_RETRIEVED_SUCCESSFULLY: 'Event requests retrieved successfully',
+  EVENT_REQUESTS_RETRIEVED_SUCCESSFULLY:
+    'Event requests retrieved successfully',
   ALL_NOTIFICATIONS_MARKED_AS_READ: 'All notifications marked as read',
-  DANCER_PROFILE_RETRIEVED_SUCCESSFULLY: 'Dancer profile retrieved successfully',
+  DANCER_PROFILE_RETRIEVED_SUCCESSFULLY:
+    'Dancer profile retrieved successfully',
 
   // Error Messages
   INVALID_LOGIN_DATA: 'Invalid login data',

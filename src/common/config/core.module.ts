@@ -37,7 +37,7 @@ import { JwtMiddleware } from 'src/modules/auth/jwt/middleware/jwt.middleware';
   exports: [JwtModule],
 })
 export class CoreModule implements NestModule {
-  constructor(private configService: ConfigService) { }
+  constructor(private configService: ConfigService) {}
 
   configure(consumer: MiddlewareConsumer) {
     consumer

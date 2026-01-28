@@ -26,7 +26,13 @@ import {
   type IPaymentService,
   IPaymentServiceToken,
 } from 'src/common/payments/interfaces/payment.interface';
-import { CreateUpgradeRequestDto, PaymentConfirmationResponse, PaymentFailedResponse, PaymentOrderResponse, UserUpgradeRequestResponse } from '../dto/upgrade-request.dto';
+import {
+  CreateUpgradeRequestDto,
+  PaymentConfirmationResponse,
+  PaymentFailedResponse,
+  PaymentOrderResponse,
+  UserUpgradeRequestResponse,
+} from '../dto/upgrade-request.dto';
 import {
   IPaymentsServiceToken,
   PaymentStatus,
@@ -43,9 +49,9 @@ export class UpgradeRequestService implements IUpgradeRequestService {
     private userModel: Model<User>,
     @Inject(INotificationServiceToken)
     private notificationService: INotificationService,
-    @Inject(IPaymentServiceToken) 
+    @Inject(IPaymentServiceToken)
     private razorpayService: IPaymentService,
-    @Inject(IPaymentsServiceToken) 
+    @Inject(IPaymentsServiceToken)
     private paymentsService: IPaymentsService,
   ) {}
 
@@ -107,8 +113,9 @@ export class UpgradeRequestService implements IUpgradeRequestService {
     });
   }
 
-  async getRequestsByUser(userId: string): 
-  Promise<UserUpgradeRequestResponse[]> {
+  async getRequestsByUser(
+    userId: string,
+  ): Promise<UserUpgradeRequestResponse[]> {
     console.log(
       'getRequestsByUser called with userId (string):',
       userId,
@@ -411,8 +418,8 @@ export class UpgradeRequestService implements IUpgradeRequestService {
   }
 
   async upgradePaymentFailed(
-    userId: string, 
-    requestId: string
+    userId: string,
+    requestId: string,
   ): Promise<PaymentFailedResponse> {
     const request = await this.upgradeRequestRepo.findById(requestId);
     if (!request) {

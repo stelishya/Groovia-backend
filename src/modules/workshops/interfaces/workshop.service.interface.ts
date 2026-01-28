@@ -71,7 +71,10 @@ export interface IWorkshopService {
   getInstructorWorkshops(instructorId: string): Promise<Workshop[]>;
 
   // Booking & Payment Methods
-  initiateWorkshopBooking(workshopId: string, userId: string): Promise<PaymentInitiationResponse>;
+  initiateWorkshopBooking(
+    workshopId: string,
+    userId: string,
+  ): Promise<PaymentInitiationResponse>;
   confirmWorkshopBooking(
     workshopId: string,
     userId: string,

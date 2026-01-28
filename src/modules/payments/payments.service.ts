@@ -11,7 +11,7 @@ import { Types } from 'mongoose';
 
 @Injectable()
 export class PaymentsService implements IPaymentsService {
-  constructor(private readonly paymentsRepository: PaymentsRepository) { }
+  constructor(private readonly paymentsRepository: PaymentsRepository) {}
 
   async createRecord(data: {
     userId: string;
