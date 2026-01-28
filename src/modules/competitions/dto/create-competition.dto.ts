@@ -1,6 +1,23 @@
-import { IsNotEmpty, IsString, IsEnum, IsNumber, IsDateString, IsOptional, IsUrl, Min, IsArray, ValidateNested, IsObject } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsEnum,
+  IsNumber,
+  IsDateString,
+  IsOptional,
+  IsUrl,
+  Min,
+  IsArray,
+  ValidateNested,
+  IsObject,
+} from 'class-validator';
+import { Types } from 'mongoose';
 import { Type } from 'class-transformer';
-import { CompetitionCategory, CompetitionLevel, CompetitionMode } from '../models/competition.schema';
+import {
+  CompetitionCategory,
+  CompetitionLevel,
+  CompetitionMode,
+} from '../models/competition.schema';
 
 export class CreateCompetitionDto {
   @IsNotEmpty()
@@ -68,4 +85,16 @@ export class CreateCompetitionDto {
   @IsNumber()
   @Min(1)
   maxParticipants: number;
+}
+export interface PopulatedUser {
+  _id: Types.ObjectId;
+  profileImage?: string|undefined;
+  username?: string;
+  email?: string;
+}
+export interface RegisteredDancerItem {
+  dancerId: Types.ObjectId | PopulatedUser; 
+  paymentStatus: string;
+  score: number;
+  registeredAt: Date;
 }

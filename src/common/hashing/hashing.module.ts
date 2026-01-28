@@ -7,8 +7,8 @@ import { IHashingServiceToken } from './interfaces/hashing.service.interface';
     {
       provide: IHashingServiceToken,
       useClass: HashingService,
-    }
+    },
   ],
-  exports: [IHashingServiceToken]
+  exports: [IHashingServiceToken],
 })
-export class HashingModule { }
+export class HashingModule {}

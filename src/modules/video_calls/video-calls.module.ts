@@ -12,10 +12,10 @@ import { IVideoCallsServiceToken } from './interfaces/video-calls.service.interf
     VideoCallsGateway,
     {
       provide: IVideoCallsServiceToken,
-      useClass: VideoCallsService
-    }
+      useClass: VideoCallsService,
+    },
   ],
   controllers: [VideoCallsController],
   exports: [IVideoCallsServiceToken],
 })
-export class VideoCallsModule { }
+export class VideoCallsModule {}

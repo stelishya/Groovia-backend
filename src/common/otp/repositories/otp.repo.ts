@@ -4,7 +4,6 @@ import { FilterQuery, Model, UpdateQuery } from 'mongoose';
 import { IOtpRepository } from '../../../modules/auth/user-auth/interfaces/otp.repo.interface';
 import { Otp, OtpDocument } from '../models/otp.schema';
 
-
 @Injectable()
 export class OtpRepository implements IOtpRepository {
   constructor(

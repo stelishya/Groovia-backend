@@ -9,34 +9,34 @@ import { HashingModule } from 'src/common/hashing/hashing.module';
 import { CommonModule } from '../common/common.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
-import { TokenService } from '../services/token.service';
-import { JwtStrategy } from '../strategies/jwt.strategy';
-import { JwtRefreshStrategy } from '../strategies/jwtRefresh.strategy';
+import { TokenService } from '../jwt/services/token.service';
+import { JwtStrategy } from '../jwt/strategies/jwt.strategy';
+import { JwtRefreshStrategy } from '../jwt/strategies/jwtRefresh.strategy';
 import { AdminsModule } from 'src/modules/admins/admins.module';
 
 @Module({
-    imports: [
-        UsersModule,
-        MailModule,
-        HashingModule,
-        CommonModule,
-        PassportModule,
-        CommonModule,
-        PassportModule,
-        JwtModule.register({}),
-        AdminsModule
-    ],
-    controllers: [UserAuthController],
-    providers: [
-        {
-            provide: IUserAuthServiceToken,
-            useClass: UserAuthService
-        },
-        OtpService,
-        TokenService,
-        JwtStrategy,
-        JwtRefreshStrategy
-    ],
-    exports: [IUserAuthServiceToken, TokenService]
+  imports: [
+    UsersModule,
+    MailModule,
+    HashingModule,
+    CommonModule,
+    PassportModule,
+    CommonModule,
+    PassportModule,
+    JwtModule.register({}),
+    AdminsModule,
+  ],
+  controllers: [UserAuthController],
+  providers: [
+    {
+      provide: IUserAuthServiceToken,
+      useClass: UserAuthService,
+    },
+    OtpService,
+    TokenService,
+    JwtStrategy,
+    JwtRefreshStrategy,
+  ],
+  exports: [IUserAuthServiceToken, TokenService],
 })
-export class UserAuthModule { }
+export class UserAuthModule {}

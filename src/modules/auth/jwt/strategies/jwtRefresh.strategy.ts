@@ -32,7 +32,7 @@ export class JwtRefreshStrategy extends PassportStrategy(
   }
 
   validate(payload: TokenPayload): TokenPayload {
-    console.log("payload in jwt-refresh-strategy: ", payload);
+    console.log('payload in jwt-refresh-strategy: ', payload);
     return {
       userId: payload.userId,
       email: payload.email,

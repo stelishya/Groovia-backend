@@ -32,7 +32,10 @@ export class RegisteredDancer {
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   dancerId: Types.ObjectId;
 
-  @Prop({ required: true, enum: ['pending', 'completed', 'failed', 'refunded', 'paid'] })
+  @Prop({
+    required: true,
+    enum: ['pending', 'completed', 'failed', 'refunded', 'paid'],
+  })
   paymentStatus: string;
 
   @Prop({ type: Number, default: 0 })
@@ -100,14 +103,18 @@ export class Competition extends Document {
   @Prop({ required: true, type: Date })
   registrationDeadline: Date;
 
-  @Prop({ type: String, enum: CompetitionStatus, default: CompetitionStatus.ACTIVE })
+  @Prop({
+    type: String,
+    enum: CompetitionStatus,
+    default: CompetitionStatus.ACTIVE,
+  })
   status: CompetitionStatus;
 
   @Prop({ type: [RegisteredDancerSchema], default: [] })
   registeredDancers: RegisteredDancer[];
 
   @Prop({ type: Object }) // Flexible object for results structure
-  results?: any;
+  results?: Record<string, unknown> | Record<string, unknown>[];
 }
 
 export const CompetitionSchema = SchemaFactory.createForClass(Competition);

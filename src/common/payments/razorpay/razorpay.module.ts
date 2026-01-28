@@ -5,10 +5,12 @@ import { IPaymentServiceToken } from '../interfaces/payment.interface';
 
 @Module({
   imports: [ConfigModule],
-  providers: [{
-        provide: IPaymentServiceToken,
-        useClass: RazorpayService
-      },],
-  exports: [IPaymentServiceToken]
+  providers: [
+    {
+      provide: IPaymentServiceToken,
+      useClass: RazorpayService,
+    },
+  ],
+  exports: [IPaymentServiceToken],
 })
-export class RazorpayModule { }
+export class RazorpayModule {}

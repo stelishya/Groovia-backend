@@ -9,19 +9,19 @@ import { IBookingsRepositoryToken } from './interfaces/bookings-repository.inter
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Booking.name, schema: BookingSchema }])
+    MongooseModule.forFeature([{ name: Booking.name, schema: BookingSchema }]),
   ],
   controllers: [BookingsController],
   providers: [
     {
       provide: IBookingsServiceToken,
-      useClass: BookingsService
+      useClass: BookingsService,
     },
     {
       provide: IBookingsRepositoryToken,
-      useClass: BookingsRepository
-    }
+      useClass: BookingsRepository,
+    },
   ],
-  exports: [IBookingsServiceToken, IBookingsRepositoryToken]
+  exports: [IBookingsServiceToken, IBookingsRepositoryToken],
 })
-export class BookingsModule { }
+export class BookingsModule {}

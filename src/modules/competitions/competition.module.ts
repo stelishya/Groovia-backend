@@ -26,12 +26,13 @@ import { UsersModule } from '../users/users.module';
     // CompetitionService, CompetitionRepository,
     {
       provide: ICompetitionServiceToken,
-      useClass: CompetitionService
+      useClass: CompetitionService,
     },
     {
       provide: ICompetitionRepoToken,
-      useClass: CompetitionRepository
-    }],
+      useClass: CompetitionRepository,
+    },
+  ],
   exports: [ICompetitionServiceToken, ICompetitionRepoToken],
 })
-export class CompetitionModule { }
+export class CompetitionModule {}

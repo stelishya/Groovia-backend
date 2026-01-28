@@ -1,11 +1,20 @@
-import { BadRequestException, Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request, Response } from 'express';
 import { Language, User } from 'src/modules/users/models/user.schema';
 import { ICommonService } from './interfaces/common-service.interface';
 import { OAuth2Client } from 'google-auth-library';
-import { type IUserService, IUserServiceToken } from 'src/modules/users/interfaces/services/user.service.interface';
+import {
+  type IUserService,
+  IUserServiceToken,
+} from 'src/modules/users/interfaces/user.service.interface';
 import { JwtPayload } from 'src/common/interfaces/jwt-payload.interface';
 import { RedisService } from 'src/common/redis/redis.service';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
@@ -13,8 +22,8 @@ import { Role } from 'src/common/enums/role.enum';
 
 @Injectable()
 export class CommonService implements ICommonService {
-  private readonly _logger = new Logger(CommonService.name)
-  private _googleClient: OAuth2Client
+  private readonly _logger = new Logger(CommonService.name);
+  private _googleClient: OAuth2Client;
   constructor(
     @Inject(IUserServiceToken)
     private readonly _userService: IUserService,
@@ -24,7 +33,7 @@ export class CommonService implements ICommonService {
   ) {
     this._googleClient = new OAuth2Client(
       this._configService.get<string>('GOOGLE_CLIENT_ID'),
-    )
+    );
   }
   async logoutHandler(req: Request, res: Response): Promise<void> {
     const cookieName = 'refreshToken';
@@ -42,12 +51,16 @@ export class CommonService implements ICommonService {
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
       });
-      this._logger.log(`Logout service called, cleared cookie: ${cookieName}`)
-      console.log(`Logout service called, cleared cookie: ${cookieName}`)
-      res.status(HttpStatus.OK).json({ message: 'User logged out successfully' })
+      this._logger.log(`Logout service called, cleared cookie: ${cookieName}`);
+      console.log(`Logout service called, cleared cookie: ${cookieName}`);
+      res
+        .status(HttpStatus.OK)
+        .json({ message: 'User logged out successfully' });
     } catch (error) {
-      this._logger.error(`Logout service failed: ${error.message}`)
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Logout failed' })
+      this._logger.error(`Logout service failed: ${error.message}`);
+      res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ message: 'Logout failed' });
     }
   }
   private _convertToLanguageEnum(
@@ -72,8 +85,8 @@ export class CommonService implements ICommonService {
   async handleGoogleAuth(
     credential: string,
     res: Response,
-    role: Role.CLIENT | Role.DANCER
-  ): Promise<{ success: boolean, accessToken: string; message: string }> {
+    role: Role.CLIENT | Role.DANCER,
+  ): Promise<{ success: boolean; accessToken: string; message: string }> {
     try {
       const ticket = await this._googleClient.verifyIdToken({
         idToken: credential,
@@ -108,7 +121,8 @@ export class CommonService implements ICommonService {
         let sanitizedUsername = fullname?.trim() || 'user';
 
         // ensure username is unique by appending part of googleId if needed
-        const existingUser = await this._userService.findByUsername(sanitizedUsername);
+        const existingUser =
+          await this._userService.findByUsername(sanitizedUsername);
         if (existingUser) {
           sanitizedUsername = `${sanitizedUsername} ${googleId.substring(0, 6)}`;
         }
@@ -119,12 +133,16 @@ export class CommonService implements ICommonService {
           googleId,
           language,
           profileImage,
-          role: [role ?? Role.DANCER],   // Set role only for new users
+          role: [role ?? Role.DANCER], // Set role only for new users
         });
       } else {
         // existing user - check if blocked
         if (user.isBlocked) {
-          return { success: false, accessToken: '', message: 'Your account has been blocked. Please contact support.' }
+          return {
+            success: false,
+            accessToken: '',
+            message: 'Your account has been blocked. Please contact support.',
+          };
           // throw new BadRequestException('Your account has been blocked. Please contact support.');
         }
 
@@ -155,11 +173,14 @@ export class CommonService implements ICommonService {
     }
   }
 
-  async generateToken(user: any, roles?: string[]): Promise<{ accessToken: string; refreshToken: string }> {
+  async generateToken(
+    user: User,
+    roles?: string[],
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const payload = {
       userId: user._id,
       email: user.email,
-      role: roles || user.role
+      role: roles || user.role,
     };
     const accessToken = await this._jwtService.signAsync(payload, {
       secret: this._configService.get<string>('JWT_SECRET'),
@@ -197,10 +218,14 @@ export class CommonService implements ICommonService {
     }
   }
 
-  async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string }> {
+  async refreshAccessToken(
+    refreshToken: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     try {
       // Check if token is blacklisted
-      const isBlacklisted = await this._redisService.client.get(`blacklist:${refreshToken}`);
+      const isBlacklisted = await this._redisService.client.get(
+        `blacklist:${refreshToken}`,
+      );
       if (isBlacklisted) {
         throw new BadRequestException('Refresh token has been revoked');
       }

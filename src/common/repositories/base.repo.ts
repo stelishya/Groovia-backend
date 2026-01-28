@@ -1,7 +1,16 @@
-import { Model, FilterQuery, ProjectionType, Types, UpdateQuery, Document as MongooseDocument } from 'mongoose';
+import {
+  Model,
+  FilterQuery,
+  ProjectionType,
+  Types,
+  UpdateQuery,
+  Document as MongooseDocument,
+} from 'mongoose';
 import { IBaseRepository } from '../interfaces/base-repository.interface';
 
-export class BaseRepository<T, D extends MongooseDocument & T> implements IBaseRepository<T, D> {
+export class BaseRepository<T, D extends MongooseDocument & T>
+  implements IBaseRepository<T, D>
+{
   constructor(protected readonly model: Model<D>) {}
 
   findById(
@@ -15,6 +24,6 @@ export class BaseRepository<T, D extends MongooseDocument & T> implements IBaseR
     filter: FilterQuery<D>,
     update: UpdateQuery<D>,
   ): Promise<D | null> {
-    return this.model.findOneAndUpdate(filter , update, { new: true }).exec() ;
+    return this.model.findOneAndUpdate(filter, update, { new: true }).exec();
   }
 }

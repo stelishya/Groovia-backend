@@ -1,16 +1,16 @@
-import { Role } from "../enums/role.enum";
+import { Role } from '../enums/role.enum';
 
-export interface JwtPayload{
-    userId:string;
-    email?:string;
-    username?:string;
-    role:Role;
+export interface JwtPayload {
+  userId: string;
+  email?: string;
+  username?: string;
+  role: Role;
 
-    isSuspended?:boolean;
-    suspendedUntil?:Date;
-    warningCount?:number;
+  isSuspended?: boolean;
+  suspendedUntil?: Date;
+  warningCount?: number;
 
-    // standard jwt fields
-    iat?:number;
-    exp?:number;
+  // standard jwt fields
+  iat?: number;
+  exp?: number;
 }

@@ -1,12 +1,15 @@
 import { ConsoleLogger, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Document } from 'mongoose';
+import { Model, Document, FilterQuery, SortOrder } from 'mongoose';
 import { Competition } from '../models/competition.schema';
 import { BaseRepository } from '../../../common/repositories/base.repo';
 import { Types } from 'mongoose';
 
 @Injectable()
-export class CompetitionRepository extends BaseRepository<Competition, Competition & Document> {
+export class CompetitionRepository extends BaseRepository<
+  Competition,
+  Competition & Document
+> {
   constructor(
     @InjectModel(Competition.name) private competitionModel: Model<Competition>,
   ) {
@@ -16,17 +19,26 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
   // Basic CRUD methods
   async create(data: Partial<Competition>): Promise<Competition> {
     const competition = new this.competitionModel(data);
-    console.log("ith comp repo, competition : ", competition)
+    console.log('ith comp repo, competition : ', competition);
     return competition.save();
   }
 
   async findAll(): Promise<Competition[]> {
-    return this.competitionModel.find().populate('organizer_id', 'username profileImage').exec();
+    return this.competitionModel
+      .find()
+      .populate('organizer_id', 'username profileImage')
+      .exec();
   }
 
-  async find(query: any, sort?: any, skip?: number, limit?: number): Promise<{ data: Competition[], total: number }> {
+  async find(
+    query: FilterQuery<Competition>,
+    sort?: Record<string, SortOrder>,
+    skip?: number,
+    limit?: number,
+  ): Promise<{ data: Competition[]; total: number }> {
     const total = await this.competitionModel.countDocuments(query);
-    const data = await this.competitionModel.find(query)
+    const data = await this.competitionModel
+      .find(query)
       .sort(sort || { createdAt: -1 })
       .skip(skip || 0)
       .limit(limit || 0)
@@ -35,9 +47,14 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
     return { data, total };
   }
 
-  async update(id: string, data: Partial<Competition>): Promise<Competition | null> {
-    const updatedCompetition = await this.competitionModel.findByIdAndUpdate(id, data, { new: true }).exec();
-    console.log("hello update competition", updatedCompetition)
+  async update(
+    id: string,
+    data: Partial<Competition>,
+  ): Promise<Competition | null> {
+    const updatedCompetition = await this.competitionModel
+      .findByIdAndUpdate(id, data, { new: true })
+      .exec();
+    console.log('hello update competition', updatedCompetition);
     return updatedCompetition;
   }
 
@@ -46,20 +63,35 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
   }
 
   async findByIdPublic(id: string): Promise<Competition | null> {
-    return this.competitionModel.findById(id)
+    return this.competitionModel
+      .findById(id)
       .populate('organizer_id', 'username profileImage')
-      .populate('registeredDancers.dancerId', 'username email profileImage role availableForPrograms')
+      .populate(
+        'registeredDancers.dancerId',
+        'username email profileImage role availableForPrograms',
+      )
       .exec();
   }
 
-  // Add any competition-specific repository methods here
-  async findByOrganizer(organizerId: string, query: any = {}, sort: any = { createdAt: -1 }, skip?: number, limit?: number): Promise<{ data: Competition[], total: number }> {
-    const finalQuery = { organizer_id: new Types.ObjectId(organizerId), ...query };
+  async findByOrganizer(
+    organizerId: string,
+    query: FilterQuery<Competition> = {},
+    sort: Record<string, SortOrder> = { createdAt: -1 },
+    skip?: number,
+    limit?: number,
+  ): Promise<{ data: Competition[]; total: number }> {
+    const finalQuery = {
+      organizer_id: new Types.ObjectId(organizerId),
+      ...query,
+    };
     const total = await this.competitionModel.countDocuments(finalQuery);
     const data = await this.competitionModel
       .find(finalQuery)
       .populate('organizer_id', 'username profileImage')
-      .populate('registeredDancers.dancerId', 'username email profileImage role availableForPrograms')
+      .populate(
+        'registeredDancers.dancerId',
+        'username email profileImage role availableForPrograms',
+      )
       .sort(sort)
       .skip(skip || 0)
       .limit(limit || 0)
@@ -71,7 +103,7 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
     return this.competitionModel
       .find({
         status: 'active',
-        registrationDeadline: { $gte: new Date() }
+        registrationDeadline: { $gte: new Date() },
       })
       .populate('organizer_id', 'username profileImage')
       .sort({ date: 1 })
@@ -94,8 +126,17 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
       .exec();
   }
 
-  async findRegisteredCompetitions(dancerId: string, query: any = {}, sort: any = { createdAt: -1 }, skip?: number, limit?: number): Promise<{ data: Competition[], total: number }> {
-    const finalQuery = { 'registeredDancers.dancerId': new Types.ObjectId(dancerId), ...query };
+  async findRegisteredCompetitions(
+    dancerId: string,
+    query: FilterQuery<Competition> = {},
+    sort: Record<string, SortOrder> = { createdAt: -1 },
+    skip?: number,
+    limit?: number,
+  ): Promise<{ data: Competition[]; total: number }> {
+    const finalQuery = {
+      'registeredDancers.dancerId': new Types.ObjectId(dancerId),
+      ...query,
+    };
     const total = await this.competitionModel.countDocuments(finalQuery);
     const data = await this.competitionModel
       .find(finalQuery)
@@ -104,7 +145,7 @@ export class CompetitionRepository extends BaseRepository<Competition, Competiti
       .skip(skip || 0)
       .limit(limit || 0)
       .exec();
-    console.log("registeredCompetitions in comp repo, result : ", data)
+    console.log('registeredCompetitions in comp repo, result : ', data);
     return { data, total };
   }
 }

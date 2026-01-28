@@ -7,17 +7,17 @@ import { PaymentsRepository } from './repositories/payments.repository';
 import { IPaymentsServiceToken } from './interfaces/payments.service.interface';
 
 @Module({
-    imports: [
-        MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }]),
-    ],
-    providers: [
-        PaymentsRepository,
-        {
-            provide: IPaymentsServiceToken,
-            useClass: PaymentsService,
-        },
-    ],
-    controllers: [PaymentsController],
-    exports: [IPaymentsServiceToken],
+  imports: [
+    MongooseModule.forFeature([{ name: Payment.name, schema: PaymentSchema }]),
+  ],
+  providers: [
+    PaymentsRepository,
+    {
+      provide: IPaymentsServiceToken,
+      useClass: PaymentsService,
+    },
+  ],
+  controllers: [PaymentsController],
+  exports: [IPaymentsServiceToken],
 })
-export class PaymentsModule { }
+export class PaymentsModule {}

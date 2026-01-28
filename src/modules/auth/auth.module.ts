@@ -4,6 +4,6 @@ import { UserAuthModule } from './user-auth/user-auth.module';
 import { CommonModule } from './common/common.module';
 
 @Module({
-    imports: [AdminAuthModule, UserAuthModule]
+  imports: [AdminAuthModule, UserAuthModule],
 })
 export class AuthModule {}

@@ -46,7 +46,7 @@ export class AwsS3Service implements IStorageService {
       };
 
       const result = await this.s3.upload(params).promise();
-      console.log("result in uploadFile in aws-s3.service.ts : ", result)
+      console.log('result in uploadFile in aws-s3.service.ts : ', result);
       this.logger.log(`File uploaded successfully at: ${result.Location}`);
       return result;
     } catch (error) {
@@ -133,7 +133,10 @@ export class AwsS3Service implements IStorageService {
    * @param expiresIn - URL expiration time in seconds (default: 3600)
    * @returns Signed URL
    */
-  async getSignedUrl(fileName: string, expiresIn: number = 3600): Promise<string> {
+  async getSignedUrl(
+    fileName: string,
+    expiresIn: number = 3600,
+  ): Promise<string> {
     const params = {
       Bucket: this.bucketName,
       Key: fileName,

@@ -8,12 +8,13 @@ import { HashingModule } from 'src/common/hashing/hashing.module';
 import { CommonModule } from '../common/common.module';
 
 @Module({
-  imports:[AdminsModule,HashingModule,CommonModule],
-  providers: [{
-    provide:IAdminAuthServiceToken,
-    useClass:AdminAuthService,
-  },
-  JwtService,
+  imports: [AdminsModule, HashingModule, CommonModule],
+  providers: [
+    {
+      provide: IAdminAuthServiceToken,
+      useClass: AdminAuthService,
+    },
+    JwtService,
   ],
   controllers: [AdminAuthController],
 })

@@ -15,26 +15,19 @@ function getErrorName(info: unknown): string | null {
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  // Match IAuthGuard signature while keeping internals type-safe.
-
-  handleRequest<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    TUser = any,
-  >(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    err: any,
+  handleRequest<TUser extends object = object>(
+    err: unknown,
     user: TUser,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    info: any,
+    info: unknown,
     context: ExecutionContext,
   ): TUser {
-    console.log("JwtAuthGuard.handleRequest")
+    console.log('JwtAuthGuard.handleRequest');
     const errorName = getErrorName(info);
 
     if (errorName === 'TokenExpiredError') {
-      console.log("Token Expired Error")
+      console.log('Token Expired Error');
       const res = context.switchToHttp().getResponse<Response>();
-      console.log("res in handleRequest in jwtAuth.guard.ts: ",res)
+      console.log('res in handleRequest in jwtAuth.guard.ts: ', res);
       res.setHeader(
         'WWW-Authenticate',
         'Bearer error="invalid_token", error_description="access token expired"',
@@ -45,10 +38,16 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         isAccessTokenExpired: true,
       });
     }
-    console.log("token not expired")
+    console.log('token not expired');
 
     // Blocked user propagated from strategy
-    if (err && typeof err.message === 'string' && err.message.toLowerCase().includes('blocked')) {
+    if (
+      err &&
+      typeof err === 'object' &&
+      'message' in err &&
+      typeof err.message === 'string' &&
+      err.message.toLowerCase().includes('blocked')
+    ) {
       const res = context.switchToHttp().getResponse<Response>();
       res.setHeader(
         'WWW-Authenticate',
@@ -60,10 +59,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         isUserBlocked: true,
       });
     }
-    
+
     if (err || !user) {
       const res = context.switchToHttp().getResponse<Response>();
-      console.log("response ahn:",res)
+      console.log('response ahn:', res);
       res.setHeader(
         'WWW-Authenticate',
         'Bearer error="invalid_token", error_description="access token invalid"',

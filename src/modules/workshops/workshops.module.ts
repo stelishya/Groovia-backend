@@ -14,24 +14,26 @@ import { IWorkshopRepoToken } from './interfaces/workshop.repo.interface';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Workshop.name, schema: WorkshopSchema }]),
+    MongooseModule.forFeature([
+      { name: Workshop.name, schema: WorkshopSchema },
+    ]),
     StorageModule,
     RazorpayModule,
     PaymentsModule,
     NotificationsModule,
-    UsersModule
+    UsersModule,
   ],
   controllers: [WorkshopsController],
   providers: [
     {
       provide: IWorkshopServiceToken,
-      useClass: WorkshopsService
+      useClass: WorkshopsService,
     },
     {
       provide: IWorkshopRepoToken,
-      useClass: WorkshopsRepository
-    }
+      useClass: WorkshopsRepository,
+    },
   ],
   exports: [IWorkshopServiceToken, IWorkshopRepoToken],
 })
-export class WorkshopsModule { }
+export class WorkshopsModule {}

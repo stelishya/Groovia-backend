@@ -1,18 +1,31 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsMongoId, IsDateString, registerDecorator, ValidationOptions, ValidationArguments, IsOptional, IsEmail } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsMongoId,
+  IsDateString,
+  registerDecorator,
+  ValidationOptions,
+  ValidationArguments,
+  IsOptional,
+  IsEmail,
+} from 'class-validator';
 
 // Custom validator to check if date is in the future
 function IsDateInFuture(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: 'isDateInFuture',
       target: object.constructor,
       propertyName: propertyName,
       options: validationOptions,
       validator: {
-        validate(value: any, args: ValidationArguments) {
+        validate(value: unknown, args: ValidationArguments) {
           if (!value) return false;
-          const inputDate = new Date(value);
+          if (typeof value !== 'string' && typeof value !== 'number' && !(value instanceof Date)) {
+            return false;
+          }
+          const inputDate = new Date(value as string | number | Date);
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           return inputDate > today;
@@ -68,12 +81,14 @@ export class UpdateClientProfileDto {
   @IsOptional()
   email?: string;
 
-  @ApiPropertyOptional({ example: "1234567890" })
+  @ApiPropertyOptional({ example: '1234567890' })
   @IsString()
   @IsOptional()
   phone?: string;
 
-  @ApiPropertyOptional({ example: "https://s3.amazonaws.com/bucket/profile.jpg" })
+  @ApiPropertyOptional({
+    example: 'https://s3.amazonaws.com/bucket/profile.jpg',
+  })
   @IsString()
   @IsOptional()
   profileImage?: string;

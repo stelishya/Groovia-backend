@@ -1,14 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
-import { type IMailService, IMailServiceToken } from './interfaces/mail.interface';
+import {
+  type IMailService,
+  IMailServiceToken,
+} from './interfaces/mail.interface';
 
 @Injectable()
 export class MailService implements IMailService {
   private _transporter: nodemailer.Transporter;
 
-  constructor(
-    private readonly configService: ConfigService) {
+  constructor(private readonly configService: ConfigService) {
     this._transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -111,7 +113,10 @@ export class MailService implements IMailService {
     });
   }
 
-  async sendPasswordResetEmail(to: string, data: { username: string, resetUrl: string }): Promise<void> {
+  async sendPasswordResetEmail(
+    to: string,
+    data: { username: string; resetUrl: string },
+  ): Promise<void> {
     const subject = 'Reset Your Password - Groovia';
     const content = `
       <h2 class="title" style="font-size: 20px; font-weight: 600; color: var(--text-light); margin: 0 0 16px 0;">Password Reset Request</h2>

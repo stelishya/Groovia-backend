@@ -1,34 +1,68 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { Types } from 'mongoose';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Types, FilterQuery, SortOrder, PipelineStage } from 'mongoose';
 import { CompetitionRepository } from '../repositories/competition.repository';
-import { CreateCompetitionDto } from '../dto/create-competition.dto';
+import { CompetitionDocument } from '../models/competition.schema';
+import { CreateCompetitionDto, PopulatedUser, RegisteredDancerItem } from '../dto/create-competition.dto';
 import { UpdateCompetitionDto } from '../dto/update-competition.dto';
 import { Competition, CompetitionStatus } from '../models/competition.schema';
-import { type ICompetitionRepo, ICompetitionRepoToken } from '../interfaces/competition.repo.interface';
+import {
+  type ICompetitionRepo,
+  ICompetitionRepoToken,
+} from '../interfaces/competition.repo.interface';
 import { ICompetitionService } from '../interfaces/competition.service.interface';
-import { type IStorageService, IStorageServiceToken } from 'src/common/storage/interfaces/storage.interface';
-import { type IPaymentService, IPaymentServiceToken } from 'src/common/payments/interfaces/payment.interface';
-import { IPaymentsServiceToken, PaymentStatus, PaymentType } from '../../payments/interfaces/payments.service.interface';
+import {
+  type IStorageService,
+  IStorageServiceToken,
+} from 'src/common/storage/interfaces/storage.interface';
+import {
+  type IPaymentService,
+  IPaymentServiceToken,
+} from 'src/common/payments/interfaces/payment.interface';
+import {
+  IPaymentsServiceToken,
+  PaymentStatus,
+  PaymentType,
+} from '../../payments/interfaces/payments.service.interface';
 import type { IPaymentsService } from '../../payments/interfaces/payments.service.interface';
 import { StorageUtils } from 'src/common/storage/utils/storage.utils';
 import { NotificationService } from 'src/modules/notifications/services/notification.service';
 import { NotificationType } from 'src/modules/notifications/models/notification.schema';
-import { INotificationServiceToken } from 'src/modules/notifications/interfaces/notifications.service.interface';
-import { type IUserService, IUserServiceToken } from 'src/modules/users/interfaces/services/user.service.interface';
+import {
+  type INotificationService,
+  INotificationServiceToken,
+} from 'src/modules/notifications/interfaces/notifications.service.interface';
+import {
+  type IUserService,
+  IUserServiceToken,
+} from 'src/modules/users/interfaces/user.service.interface';
 
 @Injectable()
 export class CompetitionService implements ICompetitionService {
   constructor(
     @Inject(ICompetitionRepoToken)
     private readonly _competitionRepository: ICompetitionRepo,
-    @Inject(IStorageServiceToken) private readonly _storageService: IStorageService,
-    @Inject(IPaymentServiceToken) private readonly _paymentService: IPaymentService,
-    @Inject(IPaymentsServiceToken) private readonly _paymentsService: IPaymentsService,
-    @Inject(INotificationServiceToken) private readonly notificationService: NotificationService,
+    @Inject(IStorageServiceToken)
+    private readonly _storageService: IStorageService,
+    @Inject(IPaymentServiceToken)
+    private readonly _paymentService: IPaymentService,
+    @Inject(IPaymentsServiceToken)
+    private readonly _paymentsService: IPaymentsService,
+    @Inject(INotificationServiceToken)
+    private readonly notificationService: INotificationService,
     @Inject(IUserServiceToken) private readonly _usersService: IUserService,
   ) { }
 
-  async create(body: any, organizerId: string, posterFile?: any, documentFile?: any): Promise<Competition> {
+  async create(
+    body: CreateCompetitionDto,
+    organizerId: string,
+    posterFile?: Express.Multer.File,
+    documentFile?: Express.Multer.File,
+  ): Promise<Competition> {
     // Map DTO in service layer
     const createCompetitionDto: CreateCompetitionDto = {
       title: body.title,
@@ -56,9 +90,13 @@ export class CompetitionService implements ICompetitionService {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const sanitizedName = posterFile.originalname.replace(/\s+/g, '-');
       const fileName = `competitions/${uniqueSuffix}-${sanitizedName}`;
-      const uploadResult = await this._storageService.uploadBuffer(posterFile.buffer, fileName, posterFile.mimetype);
+      const uploadResult = await this._storageService.uploadBuffer(
+        posterFile.buffer,
+        fileName,
+        posterFile.mimetype,
+      );
       posterImage = uploadResult.Location;
-      console.log("Competition image uploaded to S3:", posterImage);
+      console.log('Competition image uploaded to S3:', posterImage);
     }
 
     // Upload document to S3 if provided
@@ -66,9 +104,13 @@ export class CompetitionService implements ICompetitionService {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const sanitizedName = documentFile.originalname.replace(/\s+/g, '-');
       const fileName = `competitions/documents/${uniqueSuffix}-${sanitizedName}`;
-      const uploadResult = await this._storageService.uploadBuffer(documentFile.buffer, fileName, documentFile.mimetype);
+      const uploadResult = await this._storageService.uploadBuffer(
+        documentFile.buffer,
+        fileName,
+        documentFile.mimetype,
+      );
       documentUrl = uploadResult.Location;
-      console.log("Competition document uploaded to S3:", documentUrl);
+      console.log('Competition document uploaded to S3:', documentUrl);
     }
     const competitionData = {
       ...createCompetitionDto,
@@ -78,10 +120,13 @@ export class CompetitionService implements ICompetitionService {
       date: new Date(createCompetitionDto.date),
       registrationDeadline: new Date(createCompetitionDto.registrationDeadline),
     };
-    const createdCompetition = await this._competitionRepository.create(competitionData);
+    const createdCompetition =
+      await this._competitionRepository.create(competitionData);
 
     // Convert to plain object and add signed URLs
-    const competitionObj = createdCompetition.toObject ? createdCompetition.toObject() : createdCompetition;
+    const competitionObj = (createdCompetition as CompetitionDocument).toObject
+      ? (createdCompetition as CompetitionDocument).toObject()
+      : createdCompetition;
     return this.addSignedUrlsToCompetition(competitionObj);
   }
 
@@ -93,8 +138,13 @@ export class CompetitionService implements ICompetitionService {
     category?: string;
     page?: number;
     limit?: number;
-  }): Promise<{ data: Competition[], total: number, page: number, totalPages: number }> {
-    const query: any = {};
+  }): Promise<{
+    data: Competition[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const query: FilterQuery<Competition> = {};
 
     if (options?.search) {
       query.$or = [
@@ -115,7 +165,7 @@ export class CompetitionService implements ICompetitionService {
       query.level = options.level;
     }
 
-    let sortOptions: any = { createdAt: -1 }; // Default sort
+    let sortOptions: Record<string, SortOrder> = { createdAt: -1 }; // Default sort
     if (options?.sortBy) {
       const [field, order] = options.sortBy.split(':');
       if (['fee', 'date'].includes(field)) {
@@ -124,7 +174,7 @@ export class CompetitionService implements ICompetitionService {
     }
 
     if (options?.limit) {
-      // Logic for limit if needed directly in query construction, 
+      // Logic for limit if needed directly in query construction,
       // but repo handles it via arguments.
     }
 
@@ -132,14 +182,20 @@ export class CompetitionService implements ICompetitionService {
     const limit = options?.limit || 10;
     const skip = (page - 1) * limit;
 
-    const { data, total } = await this._competitionRepository.find(query, sortOptions, skip, limit);
-    const competitionsWithSignedUrls = await this.processCompetitionsWithUrls(data);
+    const { data, total } = await this._competitionRepository.find(
+      query,
+      sortOptions,
+      skip,
+      limit,
+    );
+    const competitionsWithSignedUrls =
+      await this.processCompetitionsWithUrls(data);
 
     return {
       data: competitionsWithSignedUrls,
       total,
       page,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limit),
     };
   }
 
@@ -150,23 +206,33 @@ export class CompetitionService implements ICompetitionService {
     }
 
     // Convert to plain object if needed and add signed URLs
-    const competitionObj = competition['toObject'] ? competition['toObject']() : competition;
+    const competitionObj = (competition as CompetitionDocument).toObject
+      ? (competition as CompetitionDocument).toObject()
+      : competition;
     return this.addSignedUrlsToCompetition(competitionObj);
   }
 
-  async findByOrganizer(organizerId: string, options?: {
-    search?: string;
-    sortBy?: string;
-    level?: string;
-    style?: string;
-    category?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<{ data: Competition[], total: number, page: number, totalPages: number }> {
+  async findByOrganizer(
+    organizerId: string,
+    options?: {
+      search?: string;
+      sortBy?: string;
+      level?: string;
+      style?: string;
+      category?: string;
+      page?: number;
+      limit?: number;
+    },
+  ): Promise<{
+    data: Competition[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
     const { page = 1, limit = 10 } = options || {};
     const skip = (page - 1) * limit;
 
-    const query: any = {};
+    const query: FilterQuery<Competition> = {};
     if (options?.search) {
       query.$or = [
         { title: { $regex: options.search, $options: 'i' } },
@@ -177,7 +243,7 @@ export class CompetitionService implements ICompetitionService {
     if (options?.style) query.style = options.style;
     if (options?.level) query.level = options.level;
 
-    let sortOptions: any = { createdAt: -1 };
+    let sortOptions: Record<string, SortOrder> = { createdAt: -1 };
     if (options?.sortBy) {
       const [field, order] = options.sortBy.split(':');
       if (['fee', 'date'].includes(field)) {
@@ -185,52 +251,98 @@ export class CompetitionService implements ICompetitionService {
       }
     }
 
-    const { data, total } = await this._competitionRepository.findByOrganizer(organizerId, query, sortOptions, skip, limit);
-    const competitionsWithSignedUrls = await this.processCompetitionsWithUrls(data);
+    const { data, total } = await this._competitionRepository.findByOrganizer(
+      organizerId,
+      query,
+      sortOptions,
+      skip,
+      limit,
+    );
+    const competitionsWithSignedUrls =
+      await this.processCompetitionsWithUrls(data);
 
     return {
       data: competitionsWithSignedUrls,
       total,
       page,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limit),
     };
   }
 
-
-  private async processCompetitionsWithUrls(competitions: Competition[]): Promise<Competition[]> {
+  private async processCompetitionsWithUrls(
+    competitions: Competition[],
+  ): Promise<Competition[]> {
     const competitionsWithSignedUrls = await Promise.all(
       competitions.map(async (competition) => {
-        const competitionObj = competition['toObject'] ? competition['toObject']() : competition;
+        const competitionObj = (competition as CompetitionDocument).toObject
+          ? (competition as CompetitionDocument).toObject()
+          : competition;
         return this.addSignedUrlsToCompetition(competitionObj);
-      })
+      }),
     );
     return competitionsWithSignedUrls;
   }
 
-  private async addSignedUrlsToCompetition(competition: any): Promise<any> {
+  private async addSignedUrlsToCompetition(
+    competition: CompetitionDocument | Competition,
+  ): Promise<Competition> {
+    //handle poster image
     if (competition.posterImage) {
-      competition.posterImage = await StorageUtils.getSignedUrl(this._storageService, competition.posterImage);
+      competition.posterImage = await StorageUtils.getSignedUrl(
+        this._storageService,
+        competition.posterImage,
+      );
     }
 
     // Handle organizer profile image if populated
-    if (competition.organizer_id?.profileImage) {
-      competition.organizer_id.profileImage = await StorageUtils.getSignedUrl(this._storageService, competition.organizer_id.profileImage);
+    const organizer = competition.organizer_id as unknown as PopulatedUser;
+    if (
+      organizer &&
+      typeof organizer === 'object' &&
+      'profileImage' in organizer &&
+      organizer.profileImage
+      // if (
+      //   competition.organizer_id &&
+      //   (competition.organizer_id ).profileImage
+    ) {
+      organizer.profileImage = await StorageUtils.getSignedUrl(
+        this._storageService,
+        organizer.profileImage,
+      );
     }
 
     // Handle document if populated
     if (competition.document) {
-      competition.document = await StorageUtils.getSignedUrl(this._storageService, competition.document);
+      competition.document = await StorageUtils.getSignedUrl(
+        this._storageService,
+        competition.document,
+      );
     }
 
     // Handle registered dancers' profile images if populated
-    if (competition.registeredDancers && Array.isArray(competition.registeredDancers)) {
+    if (
+      competition.registeredDancers &&
+      Array.isArray(competition.registeredDancers)
+    ) {
       competition.registeredDancers = await Promise.all(
-        competition.registeredDancers.map(async (dancer: any) => {
-          if (dancer.dancerId?.profileImage) {
-            dancer.dancerId.profileImage = await StorageUtils.getSignedUrl(this._storageService, dancer.dancerId.profileImage);
+        competition.registeredDancers.map(async (dancer) => {
+          const typedDancer = dancer as unknown as RegisteredDancerItem;
+          // if (dancer.dancerId && dancer.dancerId.profileImage
+          if (
+            typedDancer.dancerId &&
+            typeof typedDancer.dancerId === 'object' &&
+            'profileImage' in typedDancer.dancerId
+          ) {
+            const dancer = typedDancer.dancerId as PopulatedUser;
+            if (dancer.profileImage) {
+              dancer.profileImage = await StorageUtils.getSignedUrl(
+                this._storageService,
+                dancer.profileImage,
+              );
+            }
           }
           return dancer;
-        })
+        }),
       );
     }
 
@@ -249,9 +361,74 @@ export class CompetitionService implements ICompetitionService {
     return this._competitionRepository.findByStyle(style);
   }
 
-  async update(id: string, body: any, posterFile?: any, documentFile?: any): Promise<Competition> {
+  async update(
+    id: string,
+    body: UpdateCompetitionDto,
+    posterFile?: Express.Multer.File,
+    documentFile?: Express.Multer.File,
+  ): Promise<Competition> {
     // Map DTO in service layer
-    const updateCompetitionDto: any = {
+    // const updateCompetitionDto: Partial<CreateCompetitionDto> = {
+    //   title: body.title,
+    //   description: body.description,
+    //   category: body.category,
+    //   style: body.style,
+    //   level: body.level,
+    //   age_category: body.age_category,
+    //   mode: body.mode,
+    //   duration: body.duration,
+    //   location: body.location,
+    //   meeting_link: body.meeting_link,
+    //   posterImage: body.posterImage || '',
+    //   fee: body.fee ? Number(body.fee) : undefined,
+    //   date: body.date,
+    //   registrationDeadline: body.registrationDeadline,
+    //   maxParticipants: body.maxParticipants
+    //     ? Number(body.maxParticipants)
+    //     : undefined,
+    // };
+
+    // Remove undefined values
+    // Object.keys(updateCompetitionDto).forEach(
+    //   (key) =>
+    //     updateCompetitionDto[key] === undefined &&
+    //     delete updateCompetitionDto[key],
+    // );
+
+    let posterImage = body.posterImage;
+    let documentUrl = body.document;
+
+    // Upload file to S3 if a new file is provided
+    if (posterFile && posterFile.buffer) {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const fileName = `competitions/${uniqueSuffix}-${posterFile.originalname}`;
+      const uploadResult = await this._storageService.uploadBuffer(
+        posterFile.buffer,
+        fileName,
+        posterFile.mimetype,
+      );
+      posterImage = uploadResult.Location;
+      console.log('Competition image updated to S3:', posterImage);
+    }
+    // Upload new document to S3 if provided
+    if (documentFile && documentFile.buffer) {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const fileName = `competitions/documents/${uniqueSuffix}-${documentFile.originalname}`;
+      const uploadResult = await this._storageService.uploadBuffer(
+        documentFile.buffer,
+        fileName,
+        documentFile.mimetype,
+      );
+      documentUrl = uploadResult.Location;
+      console.log('Competition document updated to S3:', documentUrl);
+    }
+
+    const formattedDate = body.date ? new Date(body.date) : undefined;
+    const formattedDeadline = body.registrationDeadline
+      ? new Date(body.registrationDeadline)
+      : undefined;
+
+    const updateData: Partial<Competition> = {
       title: body.title,
       description: body.description,
       category: body.category,
@@ -262,68 +439,67 @@ export class CompetitionService implements ICompetitionService {
       duration: body.duration,
       location: body.location,
       meeting_link: body.meeting_link,
-      posterImage: body.posterImage || '',
+      posterImage: posterImage,
+      document: documentUrl,
       fee: body.fee ? Number(body.fee) : undefined,
-      date: body.date,
-      registrationDeadline: body.registrationDeadline,
-      maxParticipants: body.maxParticipants ? Number(body.maxParticipants) : undefined,
+      maxParticipants: body.maxParticipants
+        ? Number(body.maxParticipants)
+        : undefined,
+      // Assign the converted Date objects here
+      date: formattedDate,
+      registrationDeadline: formattedDeadline,
     };
-
-    // Remove undefined values
-    Object.keys(updateCompetitionDto).forEach(key =>
-      updateCompetitionDto[key] === undefined && delete updateCompetitionDto[key]
-    );
-
-    let posterImage = updateCompetitionDto.posterImage;
-    let documentUrl = updateCompetitionDto.document;
-
-    // Upload file to S3 if a new file is provided
-    if (posterFile && posterFile.buffer) {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      const fileName = `competitions/${uniqueSuffix}-${posterFile.originalname}`;
-      const uploadResult = await this._storageService.uploadBuffer(posterFile.buffer, fileName, posterFile.mimetype);
-      posterImage = uploadResult.Location;
-      console.log("Competition image updated to S3:", posterImage);
-    }
-    // Upload new document to S3 if provided
-    if (documentFile && documentFile.buffer) {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      const fileName = `competitions/documents/${uniqueSuffix}-${documentFile.originalname}`;
-      const uploadResult = await this._storageService.uploadBuffer(documentFile.buffer, fileName, documentFile.mimetype);
-      documentUrl = uploadResult.Location;
-      console.log("Competition document updated to S3:", documentUrl);
-    }
-    const updateData: any = { ...updateCompetitionDto };
+    // const updateData: Record<string, unknown> = { ...updateCompetitionDto };
+    // const updateData: Partial<Competition> & { posterImage?: string; document?: string } = {
+    //   ...updateCompetitionDto,
+    //   date: formattedDate,
+    //   registrationDeadline: formattedDeadline,
+    // };
+    //iterate over the keys and delete keys that are undefined
+    Object.keys(updateData).forEach((key) => {
+      // Cast key to keyof Competition to satisfy TypeScript
+      const k = key as keyof Competition;
+      if (updateData[k] === undefined) {
+        delete updateData[k];
+      }
+    });
 
     // Update posterImage if a new one was uploaded or provided
-    if (posterImage) {
-      updateData.posterImage = posterImage;
-    }
+    // if (posterImage) {
+    //   updateData.posterImage = posterImage;
+    // }
     // Update document if a new one was uploaded or provided
-    if (documentUrl) {
-      updateData.document = documentUrl;
-    }
+    // if (documentUrl) {
+    //   updateData.document = documentUrl;
+    // }
 
-    console.log("Update Service - Poster Image:", posterImage);
-    console.log("Update Service - Document URL:", documentUrl);
-    console.log("Update Service - Update Data:", updateData);
+    console.log('Update Service - Poster Image:', posterImage);
+    console.log('Update Service - Document URL:', documentUrl);
+    console.log('Update Service - Update Data:', updateData);
 
     // Convert date strings to Date objects if provided
-    if (updateData.date) {
-      updateData.date = new Date(updateData.date);
-    }
-    if (updateData.registrationDeadline) {
-      updateData.registrationDeadline = new Date(updateData.registrationDeadline);
-    }
+    // if (updateData.date) {
+    //   updateData.date = new Date(updateData.date);
+    // }
+    // if (updateData.registrationDeadline) {
+    //   updateData.registrationDeadline = new Date(
+    //     updateData.registrationDeadline,
+    //   );
+    // }
 
-    const competition = await this._competitionRepository.update(id, updateData);
-    console.log("Update Service - Competition:", competition);
+    const competition = await this._competitionRepository.update(
+      id,
+      updateData,
+    );
+    console.log('Update Service - Competition:', competition);
     if (!competition) {
       throw new Error('Competition not found');
     }
 
     // Convert to plain object and add signed URLs
-    const competitionObj = competition.toObject ? competition.toObject() : competition;
+    const competitionObj = (competition as CompetitionDocument).toObject
+      ? (competition as CompetitionDocument).toObject()
+      : competition;
     return this.addSignedUrlsToCompetition(competitionObj);
   }
 
@@ -331,12 +507,16 @@ export class CompetitionService implements ICompetitionService {
     await this._competitionRepository.delete(id);
   }
 
-  async registerDancer(competitionId: string, dancerId: string, paymentStatus: string = 'pending'): Promise<Competition> {
+  async registerDancer(
+    competitionId: string,
+    dancerId: string,
+    paymentStatus: string = 'pending',
+  ): Promise<Competition> {
     const competition = await this.findOne(competitionId);
 
     // Check if dancer is already registered
     const isAlreadyRegistered = competition.registeredDancers.some(
-      dancer => dancer.dancerId.toString() === dancerId
+      (dancer) => dancer.dancerId.toString() === dancerId,
     );
 
     if (isAlreadyRegistered) {
@@ -351,18 +531,25 @@ export class CompetitionService implements ICompetitionService {
       registeredAt: new Date(),
     });
 
-    const updatedCompetition = await this._competitionRepository.update(competitionId, competition);
+    const updatedCompetition = await this._competitionRepository.update(
+      competitionId,
+      competition,
+    );
     if (!updatedCompetition) {
       throw new Error('Failed to update competition');
     }
     return updatedCompetition;
   }
 
-  async updatePaymentStatus(competitionId: string, dancerId: string, paymentStatus: string): Promise<Competition> {
+  async updatePaymentStatus(
+    competitionId: string,
+    dancerId: string,
+    paymentStatus: string,
+  ): Promise<Competition> {
     const competition = await this.findOne(competitionId);
 
     const dancerIndex = competition.registeredDancers.findIndex(
-      dancer => dancer.dancerId.toString() === dancerId
+      (dancer) => dancer.dancerId.toString() === dancerId,
     );
 
     if (dancerIndex === -1) {
@@ -370,18 +557,25 @@ export class CompetitionService implements ICompetitionService {
     }
 
     competition.registeredDancers[dancerIndex].paymentStatus = paymentStatus;
-    const updatedCompetition = await this._competitionRepository.update(competitionId, competition);
+    const updatedCompetition = await this._competitionRepository.update(
+      competitionId,
+      competition,
+    );
     if (!updatedCompetition) {
       throw new Error('Failed to update competition');
     }
     return updatedCompetition;
   }
 
-  async updateScore(competitionId: string, dancerId: string, score: number): Promise<Competition> {
+  async updateScore(
+    competitionId: string,
+    dancerId: string,
+    score: number,
+  ): Promise<Competition> {
     const competition = await this.findOne(competitionId);
 
     const dancerIndex = competition.registeredDancers.findIndex(
-      dancer => dancer.dancerId.toString() === dancerId
+      (dancer) => dancer.dancerId.toString() === dancerId,
     );
 
     if (dancerIndex === -1) {
@@ -389,37 +583,54 @@ export class CompetitionService implements ICompetitionService {
     }
 
     competition.registeredDancers[dancerIndex].score = score;
-    const updatedCompetition = await this._competitionRepository.update(competitionId, competition);
+    const updatedCompetition = await this._competitionRepository.update(
+      competitionId,
+      competition,
+    );
     if (!updatedCompetition) {
       throw new Error('Failed to update competition');
     }
     return updatedCompetition;
   }
 
-  async finalizeResults(competitionId: string, results: any): Promise<Competition> {
-    const updatedCompetition = await this._competitionRepository.update(competitionId, {
-      results,
-      status: CompetitionStatus.COMPLETED
-    });
+  async finalizeResults(
+    competitionId: string,
+    results: Record<string, unknown> | Record<string, unknown>[],
+  ): Promise<Competition> {
+    const updatedCompetition = await this._competitionRepository.update(
+      competitionId,
+      {
+        results,
+        status: CompetitionStatus.COMPLETED,
+      },
+    );
     if (!updatedCompetition) {
       throw new Error('Failed to update competition');
     }
     return updatedCompetition;
   }
 
-  async findRegisteredCompetitions(dancerId: string, options?: {
-    search?: string;
-    sortBy?: string;
-    level?: string;
-    style?: string;
-    category?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<{ data: Competition[], total: number, page: number, totalPages: number }> {
+  async findRegisteredCompetitions(
+    dancerId: string,
+    options?: {
+      search?: string;
+      sortBy?: string;
+      level?: string;
+      style?: string;
+      category?: string;
+      page?: number;
+      limit?: number;
+    },
+  ): Promise<{
+    data: Competition[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
     const { page = 1, limit = 10 } = options || {};
     const skip = (page - 1) * limit;
 
-    const query: any = {};
+    const query: FilterQuery<Competition> = {};
     if (options?.search) {
       query.$or = [
         { title: { $regex: options.search, $options: 'i' } },
@@ -430,7 +641,7 @@ export class CompetitionService implements ICompetitionService {
     if (options?.style) query.style = options.style;
     if (options?.level) query.level = options.level;
 
-    let sortOptions: any = { createdAt: -1 };
+    let sortOptions: Record<string, SortOrder> = { createdAt: -1 };
     if (options?.sortBy) {
       const [field, order] = options.sortBy.split(':');
       if (['fee', 'date'].includes(field)) {
@@ -438,34 +649,54 @@ export class CompetitionService implements ICompetitionService {
       }
     }
 
-    const { data, total } = await this._competitionRepository.findRegisteredCompetitions(dancerId, query, sortOptions, skip, limit);
-    const competitionsWithSignedUrls = await this.processCompetitionsWithUrls(data);
+    const { data, total } =
+      await this._competitionRepository.findRegisteredCompetitions(
+        dancerId,
+        query,
+        sortOptions,
+        skip,
+        limit,
+      );
+    const competitionsWithSignedUrls =
+      await this.processCompetitionsWithUrls(data);
     return {
       data: competitionsWithSignedUrls,
       total,
       page,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limit),
     };
   }
-  async initiatePayment(competitionId: string, dancerId: string, amount: number, currency: string) {
-    const competition = await this._competitionRepository.findById(competitionId)
+  async initiatePayment(
+    competitionId: string,
+    dancerId: string,
+    amount: number,
+    currency: string,
+  ) {
+    const competition =
+      await this._competitionRepository.findById(competitionId);
 
     if (!competition) {
       throw new NotFoundException('Competition not found');
     }
 
     // Check if workshop is full
-    if (competition.registeredDancers && competition.registeredDancers.length >= competition.maxParticipants) {
+    if (
+      competition.registeredDancers &&
+      competition.registeredDancers.length >= competition.maxParticipants
+    ) {
       throw new BadRequestException('Competition is full');
     }
 
     // Check if user already registered with paid status
     const existingParticipant = competition.registeredDancers?.find(
-      (p: any) => p.dancerId.toString() === dancerId
+      (p: { dancerId: Types.ObjectId | string }) =>
+        p.dancerId.toString() === dancerId,
     );
 
     if (existingParticipant && existingParticipant.paymentStatus === 'paid') {
-      throw new BadRequestException('You are already registered for this workshop');
+      throw new BadRequestException(
+        'You are already registered for this workshop',
+      );
     }
 
     // Check if registration deadline has passed
@@ -478,14 +709,14 @@ export class CompetitionService implements ICompetitionService {
       const order = await this._paymentService.createOrder(
         competition.fee,
         'INR',
-        `ws_${competitionId.slice(-6)}_${Date.now()}`
+        `ws_${competitionId.slice(-6)}_${Date.now()}`,
       );
-      console.log("order in workshop service", order);
+      console.log('order in competition service', order);
       return {
         competition,
         amount: competition.fee,
         currency: 'INR',
-        orderId: order.id
+        orderId: order.id,
       };
     } catch (error) {
       console.error('Razorpay Order Creation Failed:', error);
@@ -493,8 +724,16 @@ export class CompetitionService implements ICompetitionService {
     }
   }
 
-  async confirmPayment(competitionId: string, dancerId: string, paymentId: string, orderId: string, signature: string, amount: number) {
-    const competition = await this._competitionRepository.findById(competitionId);
+  async confirmPayment(
+    competitionId: string,
+    dancerId: string,
+    paymentId: string,
+    orderId: string,
+    signature: string,
+    amount: number,
+  ) {
+    const competition =
+      await this._competitionRepository.findById(competitionId);
 
     if (!competition) {
       throw new NotFoundException('Competition not found');
@@ -507,7 +746,8 @@ export class CompetitionService implements ICompetitionService {
 
     // Check if user already has a participant entry (e.g., from a failed payment)
     const participantIndex = competition.registeredDancers.findIndex(
-      (p: any) => p.dancerId.toString() === dancerId
+      (p: { dancerId: Types.ObjectId | string }) =>
+        p.dancerId.toString() === dancerId,
     );
 
     if (participantIndex !== -1) {
@@ -520,8 +760,9 @@ export class CompetitionService implements ICompetitionService {
         dancerId: new Types.ObjectId(dancerId),
         paymentStatus: 'paid',
         attendance: false,
-        registeredAt: new Date()
-      } as any);
+        score: 0,
+        registeredAt: new Date(),
+      });
     }
 
     await this._competitionRepository.update(competitionId, competition);
@@ -535,16 +776,29 @@ export class CompetitionService implements ICompetitionService {
       referenceId: competitionId,
       transactionId: paymentId,
       orderId: orderId,
-      description: `Registration for competition: ${competition.title}`
+      description: `Registration for competition: ${competition.title}`,
     });
 
     // Send confirmation email
     // Get user details for notification
     const user = await this._usersService.findById(dancerId);
 
+    let organizerId: Types.ObjectId;
+
+    if (competition.organizer_id instanceof Types.ObjectId) {
+      organizerId = competition.organizer_id;
+    } else {
+      // It is a populated document, so we access _id
+      const organizer = competition.organizer_id as unknown as PopulatedUser;
+      organizerId = organizer._id;
+    }
+
     // Send confirmation notification to organizer
     await this.notificationService.createNotification(
-      competition.organizer_id instanceof Types.ObjectId ? competition.organizer_id : (competition.organizer_id as any)._id,
+      organizerId,
+      // competition.organizer_id instanceof Types.ObjectId
+      //   ? competition.organizer_id
+      //   : (competition.organizer_id )._id,
       NotificationType.COMPETITION_BOOKING_RECEIVED,
       'New Competition Booking',
       `You have a new booking from ${user?.username || 'a user'} for your competition: ${competition.title}`,
@@ -553,12 +807,16 @@ export class CompetitionService implements ICompetitionService {
     return {
       success: true,
       message: 'Successfully registered for competition',
-      competition
+      competition,
     };
   }
 
-  async markPaymentFailed(competitionId: string, userId: string): Promise<void> {
-    const competition = await this._competitionRepository.findById(competitionId);
+  async markPaymentFailed(
+    competitionId: string,
+    userId: string,
+  ): Promise<void> {
+    const competition =
+      await this._competitionRepository.findById(competitionId);
 
     if (!competition) {
       throw new NotFoundException('Competition not found');
@@ -566,7 +824,8 @@ export class CompetitionService implements ICompetitionService {
 
     // Find if user already has a participant entry
     const participantIndex = competition.registeredDancers?.findIndex(
-      (p: any) => p.dancerId.toString() === userId
+      (p: { dancerId: Types.ObjectId | string }) =>
+        p.dancerId.toString() === userId,
     );
 
     if (participantIndex !== undefined && participantIndex !== -1) {
@@ -581,10 +840,11 @@ export class CompetitionService implements ICompetitionService {
         dancerId: new Types.ObjectId(userId),
         paymentStatus: 'failed',
         attendance: false,
-        registeredAt: new Date()
-      } as any);
+        score: 0,
+        registeredAt: new Date(),
+      });
     }
-    console.log("competition in markPaymentFailed", competition);
+    console.log('competition in markPaymentFailed', competition);
     await this._competitionRepository.update(competitionId, competition);
 
     // Record failed payment
@@ -594,7 +854,7 @@ export class CompetitionService implements ICompetitionService {
       paymentType: PaymentType.COMPETITION,
       status: PaymentStatus.FAILED,
       referenceId: competitionId,
-      description: `Failed registration for competition: ${competition.title}`
+      description: `Failed registration for competition: ${competition.title}`,
     });
   }
 }

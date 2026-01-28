@@ -73,4 +73,4 @@ import { PaymentsModule } from './modules/payments/payments.module';
   providers: [AppService],
   controllers: [AppController],
 })
-export class AppModule { }
+export class AppModule {}

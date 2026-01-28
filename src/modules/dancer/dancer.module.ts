@@ -5,14 +5,21 @@ import { UsersModule } from '../users/users.module';
 import { AuthModule } from '../auth/auth.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Events, EventSchema } from '../client/models/events.schema';
+import { DancerServiceToken } from './interfaces/dancer.interface';
 
 @Module({
-  imports:[
+  imports: [
     UsersModule,
     AuthModule,
-    MongooseModule.forFeature([{ name: Events.name, schema: EventSchema }])
+    MongooseModule.forFeature([{ name: Events.name, schema: EventSchema }]),
   ],
   controllers: [DancerController],
-  providers: [DancerService]
+  providers: [
+    {
+      provide: DancerServiceToken,
+      useClass: DancerService,
+    },
+  ],
+  exports: [DancerServiceToken],
 })
 export class DancerModule {}

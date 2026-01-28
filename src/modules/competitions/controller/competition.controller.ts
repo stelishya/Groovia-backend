@@ -10,19 +10,17 @@ import {
   UseGuards,
   Request,
   UseInterceptors,
-  UploadedFile,
   UploadedFiles,
   Inject,
 } from '@nestjs/common';
-// import { CompetitionService } from '../services/competition.service';
-import { JwtAuthGuard } from '../../auth/guards/jwtAuth.guard';
+import { JwtAuthGuard } from '../../auth/jwt/guards/jwtAuth.guard';
 import { Roles } from '../../../common/decorators/roles.decorator';
 import { Role } from '../../../common/enums/role.enum';
 import { ActiveUser } from '../../../common/decorators/active-user.decorator';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { type ICompetitionService, ICompetitionServiceToken } from '../interfaces/competition.service.interface';
 import { CreateCompetitionDto } from '../dto/create-competition.dto';
 import { UpdateCompetitionDto } from '../dto/update-competition.dto';
-import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
-import { type ICompetitionService, ICompetitionServiceToken } from '../interfaces/competition.service.interface';
 
 @Controller('competitions')
 @UseGuards(JwtAuthGuard)
@@ -30,19 +28,24 @@ export class CompetitionController {
   constructor(
     @Inject(ICompetitionServiceToken)
     private readonly _competitionService: ICompetitionService,
-    // private readonly competitionService: CompetitionService
-  ) { }
+  ) {}
 
   @Post()
   @Roles(Role.ORGANIZER)
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'posterImage', maxCount: 1 },
-    { name: 'document', maxCount: 1 }
-  ]))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'posterImage', maxCount: 1 },
+      { name: 'document', maxCount: 1 },
+    ]),
+  )
   create(
-    @Body() body: any,
+    @Body() body: CreateCompetitionDto,
     @ActiveUser('userId') userId: string,
-    @UploadedFiles() files: { posterImage?: Express.Multer.File[], document?: Express.Multer.File[] },
+    @UploadedFiles()
+    files: {
+      posterImage?: Express.Multer.File[];
+      document?: Express.Multer.File[];
+    },
   ) {
     return this._competitionService.create(
       body,
@@ -62,7 +65,15 @@ export class CompetitionController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
   ) {
-    return this._competitionService.findAll({ search, sortBy, level, style, category, page, limit });
+    return this._competitionService.findAll({
+      search,
+      sortBy,
+      level,
+      style,
+      category,
+      page,
+      limit,
+    });
   }
 
   @Get('active')
@@ -82,8 +93,16 @@ export class CompetitionController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
   ) {
-    console.log("organizer nte id:", req.user.userId);
-    return this._competitionService.findByOrganizer(req.user.userId, { search, sortBy, level, style, category, page, limit });
+    console.log('organizer nte id:', req.user.userId);
+    return this._competitionService.findByOrganizer(req.user.userId, {
+      search,
+      sortBy,
+      level,
+      style,
+      category,
+      page,
+      limit,
+    });
   }
 
   @Get('my-registrations')
@@ -98,7 +117,15 @@ export class CompetitionController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
   ) {
-    return this._competitionService.findRegisteredCompetitions(userId, { search, sortBy, level, style, category, page, limit });
+    return this._competitionService.findRegisteredCompetitions(userId, {
+      search,
+      sortBy,
+      level,
+      style,
+      category,
+      page,
+      limit,
+    });
   }
 
   @Get(':id')
@@ -108,14 +135,20 @@ export class CompetitionController {
 
   @Patch(':id')
   @Roles(Role.ORGANIZER)
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'posterImage', maxCount: 1 },
-    { name: 'document', maxCount: 1 }
-  ]))
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'posterImage', maxCount: 1 },
+      { name: 'document', maxCount: 1 },
+    ]),
+  )
   update(
     @Param('id') id: string,
-    @Body() body: any,
-    @UploadedFiles() files: { posterImage?: Express.Multer.File[], document?: Express.Multer.File[] },
+    @Body() body: UpdateCompetitionDto,
+    @UploadedFiles()
+    files: {
+      posterImage?: Express.Multer.File[];
+      document?: Express.Multer.File[];
+    },
   ) {
     return this._competitionService.update(
       id,
@@ -147,7 +180,11 @@ export class CompetitionController {
     @Param('dancerId') dancerId: string,
     @Body('paymentStatus') paymentStatus: string,
   ) {
-    return this._competitionService.updatePaymentStatus(competitionId, dancerId, paymentStatus);
+    return this._competitionService.updatePaymentStatus(
+      competitionId,
+      dancerId,
+      paymentStatus,
+    );
   }
 
   @Patch(':id/score/:dancerId')
@@ -164,7 +201,7 @@ export class CompetitionController {
   @Roles(Role.ORGANIZER)
   finalizeResults(
     @Param('id') competitionId: string,
-    @Body('results') results: any,
+    @Body('results') results: Record<string, unknown>[],
   ) {
     return this._competitionService.finalizeResults(competitionId, results);
   }
@@ -176,7 +213,12 @@ export class CompetitionController {
     @ActiveUser('userId') dancerId: string,
     @Body() body: { amount: number; currency: string },
   ) {
-    return this._competitionService.initiatePayment(competitionId, dancerId, body.amount, body.currency);
+    return this._competitionService.initiatePayment(
+      competitionId,
+      dancerId,
+      body.amount,
+      body.currency,
+    );
   }
 
   @Post(':id/confirm-payment')
@@ -184,7 +226,13 @@ export class CompetitionController {
   confirmPayment(
     @Param('id') competitionId: string,
     @ActiveUser('userId') dancerId: string,
-    @Body() body: { paymentId: string; orderId: string; signature: string; amount: number },
+    @Body()
+    body: {
+      paymentId: string;
+      orderId: string;
+      signature: string;
+      amount: number;
+    },
   ) {
     return this._competitionService.confirmPayment(
       competitionId,
@@ -198,9 +246,12 @@ export class CompetitionController {
 
   @Post(':id/mark-payment-failed')
   @UseGuards(JwtAuthGuard)
-  async markFailedPayment(@Param('id') id: string, @Request() req) {
+  async markFailedPayment(
+    @Param('id') id: string,
+    @ActiveUser('userId') userId: string,
+  ) {
     console.log('markPaymentFailed called with:', id);
-    await this._competitionService.markPaymentFailed(id, req.user.userId);
+    await this._competitionService.markPaymentFailed(id, userId);
     return { success: true, message: 'Payment marked as failed' };
   }
 }

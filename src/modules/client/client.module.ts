@@ -16,13 +16,15 @@ import { IClientInterfaceToken } from './interfaces/client.interface';
     NotificationsModule,
     MongooseModule.forFeature([{ name: Events.name, schema: EventSchema }]),
     RazorpayModule,
-    PaymentsModule
+    PaymentsModule,
   ],
   controllers: [ClientController],
-  providers: [{
-    provide: IClientInterfaceToken,
-    useClass: ClientService
-  }],
-  exports: [IClientInterfaceToken]
+  providers: [
+    {
+      provide: IClientInterfaceToken,
+      useClass: ClientService,
+    },
+  ],
+  exports: [IClientInterfaceToken],
 })
-export class ClientModule { }
+export class ClientModule {}
