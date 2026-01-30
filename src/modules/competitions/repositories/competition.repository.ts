@@ -36,14 +36,17 @@ export class CompetitionRepository extends BaseRepository<
     skip?: number,
     limit?: number,
   ): Promise<{ data: Competition[]; total: number }> {
-    const total = await this.competitionModel.countDocuments(query);
-    const data = await this.competitionModel
-      .find(query)
-      .sort(sort || { createdAt: -1 })
-      .skip(skip || 0)
-      .limit(limit || 0)
-      .populate('organizer_id', 'username profileImage')
-      .exec();
+    const [total, data] = await Promise.all([
+      this.competitionModel.countDocuments(query),
+      this.competitionModel
+        .find(query)
+        .select('-registeredDancers') // Exclude heavy registeredDancers array
+        .sort(sort || { createdAt: -1 })
+        .skip(skip || 0)
+        .limit(limit || 0)
+        .populate('organizer_id', 'username profileImage')
+        .exec(),
+    ]);
     return { data, total };
   }
 

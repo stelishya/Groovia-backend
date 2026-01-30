@@ -113,6 +113,9 @@ export class Workshop {
   @Prop({ default: 0 })
   ratings: number;
 
+  @Prop({ default: 0 })
+  participantsCount: number;
+
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Review' }], default: [] })
   reviews: Types.ObjectId[];
 
@@ -132,3 +135,11 @@ export class Workshop {
 }
 
 export const WorkshopSchema = SchemaFactory.createForClass(Workshop);
+
+// Add indexes for performance
+WorkshopSchema.index({ participantsCount: -1 });
+WorkshopSchema.index({ startDate: 1 });
+WorkshopSchema.index({ status: 1 });
+WorkshopSchema.index({ instructor: 1 });
+WorkshopSchema.index({ startDate: 1, participantsCount: -1 }); // Compound index for sorted upcoming workshops (general)
+WorkshopSchema.index({ participantsCount: -1, startDate: 1 }); // OPTIMIZED: For finding top popular upcoming workshops efficiently

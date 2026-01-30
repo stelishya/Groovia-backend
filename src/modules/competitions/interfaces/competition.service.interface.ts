@@ -28,6 +28,7 @@ export interface ICompetitionService {
     level?: string;
     style?: string;
     category?: string;
+    status?: string;
     page?: number;
     limit?: number;
   }): Promise<{

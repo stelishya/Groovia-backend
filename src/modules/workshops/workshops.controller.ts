@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { WorkshopsService } from './workshops.service';
-import { CreateWorkshopDto } from './dto/workshop.dto';
+import { CreateWorkshopDto, GetWorkshopsDto } from './dto/workshop.dto';
 import { type FilterQuery } from 'mongoose';
 import { Workshop } from './models/workshop.schema';
 import { JwtAuthGuard } from '../auth/jwt/guards/jwtAuth.guard';
@@ -25,6 +25,7 @@ import { JwtAuthGuard } from '../auth/jwt/guards/jwtAuth.guard';
 import {
   type IWorkshopService,
   IWorkshopServiceToken,
+  WorkshopFilters,
 } from './interfaces/workshop.service.interface';
 
 @Controller('workshops')
@@ -70,11 +71,18 @@ export class WorkshopsController {
       limit,
     });
   }
-  @Get('')
-  findAll(@Query() query: FilterQuery<Workshop>) {
-    console.log('Fetching workshops with query:', query);
-    return this._workshopsService.findAll(query);
-  }
+
+@Get('')
+findAll(@Query() query: GetWorkshopsDto) {
+  const filters: WorkshopFilters = {
+    ...query,
+    limit: query.limit ? parseInt(query.limit) : 10,
+    page: query.page ? parseInt(query.page) : 1,
+    skipTotal: query.skipTotal === 'true',
+  };
+  console.log('Fetching workshops with filters:', filters);
+  return this._workshopsService.findAll(filters);
+}
 
   @Get(':id')
   findOne(@Param('id') id: string) {

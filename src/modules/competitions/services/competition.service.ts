@@ -140,6 +140,7 @@ export class CompetitionService implements ICompetitionService {
     level?: string;
     style?: string;
     category?: string;
+    status?: string;
     page?: number;
     limit?: number;
   }): Promise<{
@@ -169,11 +170,23 @@ export class CompetitionService implements ICompetitionService {
       query.level = options.level;
     }
 
+    // Handle status filtering
+    if (options?.status) {
+      query.status = options.status;
+    }
+
     let sortOptions: Record<string, SortOrder> = { createdAt: -1 }; // Default sort
     if (options?.sortBy) {
-      const [field, order] = options.sortBy.split(':');
-      if (['fee', 'date'].includes(field)) {
-        sortOptions = { [field]: order === 'desc' ? -1 : 1 };
+      if (options.sortBy === 'popularity') {
+        sortOptions = { participantsCount: -1 };
+      } else {
+        const [field, order] = options.sortBy.split(':');
+        if (['fee', 'date', 'popularity'].includes(field)) {
+          sortOptions = {
+            [field === 'popularity' ? 'participantsCount' : field]:
+              order === 'desc' ? -1 : 1,
+          };
+        }
       }
     }
 
@@ -290,11 +303,20 @@ export class CompetitionService implements ICompetitionService {
   private async addSignedUrlsToCompetition(
     competition: CompetitionDocument | Competition,
   ): Promise<Competition> {
-    //handle poster image
-    if (competition.posterImage) {
-      competition.posterImage = await StorageUtils.getSignedUrl(
-        this._storageService,
-        competition.posterImage,
+    const promises: Promise<void>[] = [];
+
+    // Valid S3 key check (simple heuristic)
+    const isValidS3Key = (key: string) => key && !key.startsWith('http');
+
+    // Handle poster image
+    if (competition.posterImage && isValidS3Key(competition.posterImage)) {
+      promises.push(
+        StorageUtils.getSignedUrl(
+          this._storageService,
+          competition.posterImage,
+        ).then((url) => {
+          competition.posterImage = url;
+        }),
       );
     }
 
@@ -304,52 +326,65 @@ export class CompetitionService implements ICompetitionService {
       organizer &&
       typeof organizer === 'object' &&
       'profileImage' in organizer &&
-      organizer.profileImage
-      // if (
-      //   competition.organizer_id &&
-      //   (competition.organizer_id ).profileImage
+      organizer.profileImage &&
+      isValidS3Key(organizer.profileImage)
     ) {
-      organizer.profileImage = await StorageUtils.getSignedUrl(
-        this._storageService,
-        organizer.profileImage,
+      promises.push(
+        StorageUtils.getSignedUrl(
+          this._storageService,
+          organizer.profileImage,
+        ).then((url) => {
+          organizer.profileImage = url;
+        }),
       );
     }
 
     // Handle document if populated
-    if (competition.document) {
-      competition.document = await StorageUtils.getSignedUrl(
-        this._storageService,
-        competition.document,
+    if (competition.document && isValidS3Key(competition.document)) {
+      promises.push(
+        StorageUtils.getSignedUrl(
+          this._storageService,
+          competition.document,
+        ).then((url) => {
+          competition.document = url;
+        }),
       );
     }
 
     // Handle registered dancers' profile images if populated
     if (
       competition.registeredDancers &&
-      Array.isArray(competition.registeredDancers)
+      Array.isArray(competition.registeredDancers) &&
+      competition.registeredDancers.length > 0
     ) {
-      competition.registeredDancers = await Promise.all(
-        competition.registeredDancers.map(async (dancer) => {
-          const typedDancer = dancer as unknown as RegisteredDancerItem;
-          // if (dancer.dancerId && dancer.dancerId.profileImage
-          if (
-            typedDancer.dancerId &&
-            typeof typedDancer.dancerId === 'object' &&
-            'profileImage' in typedDancer.dancerId
-          ) {
-            const dancer = typedDancer.dancerId;
-            if (dancer.profileImage) {
-              dancer.profileImage = await StorageUtils.getSignedUrl(
-                this._storageService,
-                dancer.profileImage,
-              );
+      // Only process if dancers are populated and present (skipped in list view)
+      promises.push(
+        Promise.all(
+          competition.registeredDancers.map(async (dancer) => {
+            const typedDancer = dancer as unknown as RegisteredDancerItem;
+            if (
+              typedDancer.dancerId &&
+              typeof typedDancer.dancerId === 'object' &&
+              'profileImage' in typedDancer.dancerId
+            ) {
+              const dancerObj = typedDancer.dancerId;
+              if (
+                dancerObj.profileImage &&
+                isValidS3Key(dancerObj.profileImage)
+              ) {
+                dancerObj.profileImage = await StorageUtils.getSignedUrl(
+                  this._storageService,
+                  dancerObj.profileImage,
+                );
+              }
             }
-          }
-          return dancer;
-        }),
+            return dancer;
+          }),
+        ).then(() => {}), // We modify in place, so just resolve
       );
     }
 
+    await Promise.all(promises);
     return competition;
   }
 
@@ -767,6 +802,7 @@ export class CompetitionService implements ICompetitionService {
         score: 0,
         registeredAt: new Date(),
       });
+      competition.participantsCount = (competition.participantsCount || 0) + 1;
     }
 
     await this._competitionRepository.update(competitionId, competition);

@@ -31,7 +31,7 @@ export class CompetitionController {
   constructor(
     @Inject(ICompetitionServiceToken)
     private readonly _competitionService: ICompetitionService,
-  ) {}
+  ) { }
 
   @Post()
   @Roles(Role.ORGANIZER)
@@ -65,6 +65,7 @@ export class CompetitionController {
     @Query('level') level?: string,
     @Query('style') style?: string,
     @Query('category') category?: string,
+    @Query('status') status?: string,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
   ) {
@@ -74,6 +75,7 @@ export class CompetitionController {
       level,
       style,
       category,
+      status,
       page,
       limit,
     });

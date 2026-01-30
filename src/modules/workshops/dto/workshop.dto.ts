@@ -86,3 +86,35 @@ export class WorkshopBookingDto {
   @IsNotEmpty()
   workshopId: string;
 }
+
+export class GetWorkshopsDto {
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
+  @IsString()
+  style?: string;
+
+  @IsOptional()
+  @IsString()
+  mode?: string;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsString()
+  sortBy?: string;
+
+  @IsOptional()
+  page?: string;
+
+  @IsOptional()
+  limit?: string;
+
+  @IsOptional()
+  @IsString()
+  skipTotal?: string;
+}

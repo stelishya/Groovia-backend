@@ -18,6 +18,7 @@ import {
   PaginatedBookedWorkshops,
   PaymentInitiationResponse,
   WorkshopParticipant,
+  WorkshopFilters,
 } from './interfaces/workshop.service.interface';
 import {
   type IStorageService,
@@ -118,7 +119,7 @@ export class WorkshopsService implements IWorkshopService {
     return this.addSignedUrlsToWorkshop(workshopObj);
   }
 
-  async findAll(query: FilterQuery<Workshop>): Promise<{
+  async findAll(filters: WorkshopFilters): Promise<{
     workshops: Workshop[];
     total: number;
     page: number;
@@ -128,7 +129,7 @@ export class WorkshopsService implements IWorkshopService {
     console.log(`findAll request started at ${start} `);
 
     const { workshops, total, page, limit } =
-      await this._workshopRepository.findAllWithFilters(query);
+      await this._workshopRepository.findAllWithFilters(filters);
     const dbTime = Date.now() - start;
     console.log(`DB Query took ${dbTime} ms`);
 
@@ -289,12 +290,7 @@ export class WorkshopsService implements IWorkshopService {
       (workshop.participants as unknown as WorkshopParticipant[]).push(
         newParticipant,
       );
-      // workshop.participants.push({
-      //   dancerId: new Types.ObjectId(userId),
-      //   paymentStatus: 'paid',
-      //   attendance: false,
-      //   registeredAt: new Date(),
-      // });
+      workshop.participantsCount = (workshop.participantsCount || 0) + 1;
     }
 
     await this._workshopRepository.save(workshop);
@@ -472,10 +468,18 @@ for your workshop: ${workshop.title} `,
   private async addSignedUrlsToWorkshop(
     workshop: WorkshopDocument | Workshop,
   ): Promise<Workshop> {
-    if (workshop.posterImage) {
-      workshop.posterImage = await StorageUtils.getSignedUrl(
-        this.awsS3Service,
-        workshop.posterImage,
+    const promises: Promise<void>[] = [];
+
+    // Valid S3 key check
+    const isValidS3Key = (key: string) => key && !key.startsWith('http');
+
+    if (workshop.posterImage && isValidS3Key(workshop.posterImage)) {
+      promises.push(
+        StorageUtils.getSignedUrl(this.awsS3Service, workshop.posterImage).then(
+          (url) => {
+            workshop.posterImage = url;
+          },
+        ),
       );
     }
     // Type Guard for Populated Instructor
@@ -489,12 +493,24 @@ for your workshop: ${workshop.title} `,
       );
     };
 
-    if (workshop.instructor && isInstructorPopulated(workshop.instructor)) {
-      workshop.instructor.profileImage = await StorageUtils.getSignedUrl(
-        this.awsS3Service,
-        workshop.instructor.profileImage,
+    if (
+      workshop.instructor &&
+      isInstructorPopulated(workshop.instructor) &&
+      workshop.instructor.profileImage &&
+      isValidS3Key(workshop.instructor.profileImage)
+    ) {
+      const instructor = workshop.instructor; // Capture for closure type safety
+      promises.push(
+        StorageUtils.getSignedUrl(
+          this.awsS3Service,
+          instructor.profileImage,
+        ).then((url) => {
+          instructor.profileImage = url;
+        }),
       );
     }
+
+    await Promise.all(promises);
     return workshop;
   }
 

@@ -113,6 +113,9 @@ export class Competition extends Document {
   @Prop({ type: [RegisteredDancerSchema], default: [] })
   registeredDancers: RegisteredDancer[];
 
+  @Prop({ default: 0 })
+  participantsCount: number;
+
   @Prop({ type: Object }) // Flexible object for results structure
   results?: Record<string, unknown> | Record<string, unknown>[];
 }
@@ -120,9 +123,12 @@ export class Competition extends Document {
 export const CompetitionSchema = SchemaFactory.createForClass(Competition);
 
 // Add indexes for better query performance
+CompetitionSchema.index({ participantsCount: -1 });
 CompetitionSchema.index({ date: 1 });
+CompetitionSchema.index({ status: 1 });
 CompetitionSchema.index({ registrationDeadline: 1 });
 CompetitionSchema.index({ organizer_id: 1 });
+CompetitionSchema.index({ status: 1, participantsCount: -1 }); // Compound index for sorted active competitions
 CompetitionSchema.index({ status: 1 });
 CompetitionSchema.index({ category: 1 });
 CompetitionSchema.index({ level: 1 });

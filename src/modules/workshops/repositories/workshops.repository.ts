@@ -21,6 +21,7 @@ export class WorkshopsRepository {
       search = '',
       style = '',
       mode = '',
+      status = '',
       sortBy = 'startDate',
       page = 1,
       limit = 10,
@@ -46,25 +47,37 @@ export class WorkshopsRepository {
       mongoFilter.mode = mode.toLowerCase();
     }
 
+    if (status === 'upcoming') {
+      mongoFilter.startDate = { $gte: new Date() };
+    } else if (status === 'past') {
+      mongoFilter.startDate = { $lt: new Date() };
+    }
+
     // Build sort
     const sortOptions: Record<string, SortOrder> = this.getSortOptions(sortBy);
 
     // Pagination
-    const skip = (page - 1) * limit;
+    const limitNum = typeof limit === 'string' ? parseInt(limit, 10) : limit;
+    const pageNum = typeof page === 'string' ? parseInt(page, 10) : page;
+    const skip = (pageNum - 1) * limitNum;
 
     // Execute queries
-    const [workshops, total] = await Promise.all([
+    const promises: [Promise<Workshop[]>, Promise<number>] = [
       this.workshopModel
         .find(mongoFilter)
+        .select('-participants') // Exclude heavy participants array
         .populate('instructor', 'username profileImage')
         .sort(sortOptions)
         .skip(skip)
-        .limit(limit)
+        .limit(limitNum)
         .lean()
-        .exec(),
-      this.workshopModel.countDocuments(mongoFilter).exec(),
-    ]);
-    console.log('explore workshops:', workshops);
+        .exec() as unknown as Promise<Workshop[]>,
+      filters.skipTotal
+        ? Promise.resolve(-1) // Skip count if requested
+        : this.workshopModel.countDocuments(mongoFilter).exec(),
+    ];
+
+    const [workshops, total] = await Promise.all(promises);
 
     return {
       workshops: workshops as unknown as Workshop[],

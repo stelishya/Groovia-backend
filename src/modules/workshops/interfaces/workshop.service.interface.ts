@@ -36,9 +36,11 @@ export interface WorkshopFilters {
   search?: string;
   style?: string;
   mode?: string;
+  status?: string;
   sortBy?: string;
   page?: number;
   limit?: number;
+  skipTotal?: boolean;
 }
 
 export interface PaginatedWorkshops {
