@@ -129,7 +129,6 @@ CompetitionSchema.index({ status: 1 });
 CompetitionSchema.index({ registrationDeadline: 1 });
 CompetitionSchema.index({ organizer_id: 1 });
 CompetitionSchema.index({ status: 1, participantsCount: -1 }); // Compound index for sorted active competitions
-CompetitionSchema.index({ status: 1 });
 CompetitionSchema.index({ category: 1 });
 CompetitionSchema.index({ level: 1 });
 CompetitionSchema.index({ style: 1 });

@@ -59,7 +59,7 @@ export class CompetitionService implements ICompetitionService {
     @Inject(INotificationServiceToken)
     private readonly notificationService: INotificationService,
     @Inject(IUserServiceToken) private readonly _usersService: IUserService,
-  ) {}
+  ) { }
 
   async create(
     body: CreateCompetitionDto,
@@ -100,7 +100,7 @@ export class CompetitionService implements ICompetitionService {
         posterFile.mimetype,
       );
       posterImage = uploadResult.Location;
-      console.log('Competition image uploaded to S3:', posterImage);
+      // console.log('Competition image uploaded to S3:', posterImage);
     }
 
     // Upload document to S3 if provided
@@ -114,7 +114,7 @@ export class CompetitionService implements ICompetitionService {
         documentFile.mimetype,
       );
       documentUrl = uploadResult.Location;
-      console.log('Competition document uploaded to S3:', documentUrl);
+      // console.log('Competition document uploaded to S3:', documentUrl);
     }
     const competitionData = {
       ...createCompetitionDto,
@@ -171,7 +171,10 @@ export class CompetitionService implements ICompetitionService {
     }
 
     // Handle status filtering
-    if (options?.status) {
+    if (options?.status === 'upcoming') {
+      query.status = CompetitionStatus.ACTIVE;
+      query.date = { $gte: new Date() };
+    } else if (options?.status) {
       query.status = options.status;
     }
 
@@ -188,11 +191,6 @@ export class CompetitionService implements ICompetitionService {
           };
         }
       }
-    }
-
-    if (options?.limit) {
-      // Logic for limit if needed directly in query construction,
-      // but repo handles it via arguments.
     }
 
     const page = options?.page || 1;
@@ -305,11 +303,8 @@ export class CompetitionService implements ICompetitionService {
   ): Promise<Competition> {
     const promises: Promise<void>[] = [];
 
-    // Valid S3 key check (simple heuristic)
-    const isValidS3Key = (key: string) => key && !key.startsWith('http');
-
     // Handle poster image
-    if (competition.posterImage && isValidS3Key(competition.posterImage)) {
+    if (competition.posterImage) {
       promises.push(
         StorageUtils.getSignedUrl(
           this._storageService,
@@ -326,8 +321,7 @@ export class CompetitionService implements ICompetitionService {
       organizer &&
       typeof organizer === 'object' &&
       'profileImage' in organizer &&
-      organizer.profileImage &&
-      isValidS3Key(organizer.profileImage)
+      organizer.profileImage
     ) {
       promises.push(
         StorageUtils.getSignedUrl(
@@ -339,8 +333,8 @@ export class CompetitionService implements ICompetitionService {
       );
     }
 
-    // Handle document if populated
-    if (competition.document && isValidS3Key(competition.document)) {
+    // Handle document if exists
+    if (competition.document) {
       promises.push(
         StorageUtils.getSignedUrl(
           this._storageService,
@@ -368,10 +362,7 @@ export class CompetitionService implements ICompetitionService {
               'profileImage' in typedDancer.dancerId
             ) {
               const dancerObj = typedDancer.dancerId;
-              if (
-                dancerObj.profileImage &&
-                isValidS3Key(dancerObj.profileImage)
-              ) {
+              if (dancerObj.profileImage) {
                 dancerObj.profileImage = await StorageUtils.getSignedUrl(
                   this._storageService,
                   dancerObj.profileImage,
@@ -380,7 +371,7 @@ export class CompetitionService implements ICompetitionService {
             }
             return dancer;
           }),
-        ).then(() => {}), // We modify in place, so just resolve
+        ).then(() => { }),
       );
     }
 
@@ -512,9 +503,9 @@ export class CompetitionService implements ICompetitionService {
     //   updateData.document = documentUrl;
     // }
 
-    console.log('Update Service - Poster Image:', posterImage);
-    console.log('Update Service - Document URL:', documentUrl);
-    console.log('Update Service - Update Data:', updateData);
+    // console.log('Update Service - Poster Image:', posterImage);
+    // console.log('Update Service - Document URL:', documentUrl);
+    // console.log('Update Service - Update Data:', updateData);
 
     // Convert date strings to Date objects if provided
     // if (updateData.date) {
@@ -530,7 +521,7 @@ export class CompetitionService implements ICompetitionService {
       id,
       updateData,
     );
-    console.log('Update Service - Competition:', competition);
+    // console.log('Update Service - Competition:', competition);
     if (!competition) {
       throw new Error('Competition not found');
     }
@@ -884,7 +875,7 @@ export class CompetitionService implements ICompetitionService {
         registeredAt: new Date(),
       });
     }
-    console.log('competition in markPaymentFailed', competition);
+    // console.log('competition in markPaymentFailed', competition);
     await this._competitionRepository.update(competitionId, competition);
 
     // Record failed payment

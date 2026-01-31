@@ -33,7 +33,7 @@ export class WorkshopsController {
   constructor(
     @Inject(IWorkshopServiceToken)
     private readonly _workshopsService: IWorkshopService,
-  ) {}
+  ) { }
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -72,17 +72,17 @@ export class WorkshopsController {
     });
   }
 
-@Get('')
-findAll(@Query() query: GetWorkshopsDto) {
-  const filters: WorkshopFilters = {
-    ...query,
-    limit: query.limit ? parseInt(query.limit) : 10,
-    page: query.page ? parseInt(query.page) : 1,
-    skipTotal: query.skipTotal === 'true',
-  };
-  console.log('Fetching workshops with filters:', filters);
-  return this._workshopsService.findAll(filters);
-}
+  @Get('')
+  findAll(@Query() query: GetWorkshopsDto) {
+    const filters: WorkshopFilters = {
+      ...query,
+      limit: query.limit ? parseInt(query.limit) : 10,
+      page: query.page ? parseInt(query.page) : 1,
+      skipTotal: query.skipTotal === 'true',
+    };
+    console.log('Fetching workshops with filters:', filters);
+    return this._workshopsService.findAll(filters);
+  }
 
   @Get(':id')
   findOne(@Param('id') id: string) {

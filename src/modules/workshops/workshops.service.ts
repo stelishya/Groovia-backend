@@ -62,7 +62,7 @@ export class WorkshopsService implements IWorkshopService {
     private readonly notificationService: INotificationService,
     @Inject(IUserServiceToken)
     private readonly _usersService: IUserService,
-  ) {}
+  ) { }
 
   async create(
     body: CreateWorkshopDto,
@@ -106,11 +106,11 @@ export class WorkshopsService implements IWorkshopService {
     };
 
     const savedWorkshop = await this._workshopRepository.create(workshopData);
-    console.log('Workshop created successfully:', {
-      id: savedWorkshop._id,
-      title: savedWorkshop.title,
-      instructor: savedWorkshop.instructor,
-    });
+    // console.log('Workshop created successfully:', {
+    //   id: savedWorkshop._id,
+    //   title: savedWorkshop.title,
+    //   instructor: savedWorkshop.instructor,
+    // });
 
     // Return with signed URL
     const workshopObj = savedWorkshop.toObject
@@ -125,29 +125,20 @@ export class WorkshopsService implements IWorkshopService {
     page: number;
     limit: number;
   }> {
-    const start = Date.now();
-    console.log(`findAll request started at ${start} `);
-
     const { workshops, total, page, limit } =
       await this._workshopRepository.findAllWithFilters(filters);
-    const dbTime = Date.now() - start;
-    console.log(`DB Query took ${dbTime} ms`);
 
     // Add signed URLs to all workshops
-    const signStart = Date.now();
     const workshopsWithUrls = await Promise.all(
       workshops.map(async (workshop) => {
         const workshopObj =
           workshop &&
-          typeof (workshop as WorkshopDocument).toObject === 'function'
+            typeof (workshop as WorkshopDocument).toObject === 'function'
             ? (workshop as WorkshopDocument).toObject()
             : workshop;
         return this.addSignedUrlsToWorkshop(workshopObj);
       }),
     );
-    const signTime = Date.now() - signStart;
-    console.log(`Signing took ${signTime} ms`);
-    console.log(`Total findAll took ${Date.now() - start} ms`);
 
     return {
       workshops: workshopsWithUrls,
@@ -447,7 +438,6 @@ for your workshop: ${workshop.title} `,
       userId,
       pipeline,
     );
-    console.log('workshops in service', workshops);
 
     // Add signed URLs
     const workshopsWithUrls = await Promise.all(
@@ -470,10 +460,7 @@ for your workshop: ${workshop.title} `,
   ): Promise<Workshop> {
     const promises: Promise<void>[] = [];
 
-    // Valid S3 key check
-    const isValidS3Key = (key: string) => key && !key.startsWith('http');
-
-    if (workshop.posterImage && isValidS3Key(workshop.posterImage)) {
+    if (workshop.posterImage) {
       promises.push(
         StorageUtils.getSignedUrl(this.awsS3Service, workshop.posterImage).then(
           (url) => {
@@ -496,8 +483,7 @@ for your workshop: ${workshop.title} `,
     if (
       workshop.instructor &&
       isInstructorPopulated(workshop.instructor) &&
-      workshop.instructor.profileImage &&
-      isValidS3Key(workshop.instructor.profileImage)
+      workshop.instructor.profileImage
     ) {
       const instructor = workshop.instructor; // Capture for closure type safety
       promises.push(

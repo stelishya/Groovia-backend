@@ -71,6 +71,7 @@ export class CreateCompetitionDto {
   @IsNotEmpty()
   @IsNumber()
   @Min(0)
+  @Type(() => Number)
   fee: number;
 
   @IsNotEmpty()
@@ -84,6 +85,7 @@ export class CreateCompetitionDto {
   @IsNotEmpty()
   @IsNumber()
   @Min(1)
+  @Type(() => Number)
   maxParticipants: number;
 }
 export interface PopulatedUser {
