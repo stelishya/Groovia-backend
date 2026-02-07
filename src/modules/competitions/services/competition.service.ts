@@ -35,7 +35,6 @@ import {
 import type { IPaymentsService } from '../../payments/interfaces/payments.service.interface';
 import { StorageUtils } from 'src/common/storage/utils/storage.utils';
 import { NotificationService } from 'src/modules/notifications/services/notification.service';
-import { NotificationType } from 'src/modules/notifications/models/notification.schema';
 import {
   type INotificationService,
   INotificationServiceToken,
@@ -44,6 +43,7 @@ import {
   type IUserService,
   IUserServiceToken,
 } from 'src/modules/users/interfaces/user.service.interface';
+import { NotificationType } from 'src/common/enums/notification-type.enum';
 
 @Injectable()
 export class CompetitionService implements ICompetitionService {

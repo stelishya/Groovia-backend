@@ -35,8 +35,8 @@ import {
 } from '../payments/interfaces/payments.service.interface';
 import type { IPaymentsService } from '../payments/interfaces/payments.service.interface';
 import { StorageUtils } from 'src/common/storage/utils/storage.utils';
-import { NotificationService } from '../notifications/services/notification.service';
-import { NotificationType } from '../notifications/models/notification.schema';
+import { NotificationType } from 'src/common/enums/notification-type.enum';
+import { AttendanceRecord } from '../video_calls/video-calls.schema';
 import {
   type INotificationService,
   INotificationServiceToken,
@@ -610,5 +610,75 @@ for your workshop: ${workshop.title} `,
       referenceId: workshopId,
       description: `Failed registration for workshop: ${workshop.title} `,
     });
+  }
+
+  async recordAttendanceJoin(workshopId: string, userId: string): Promise<void> {
+    const workshop = await this._workshopRepository.findById(workshopId);
+    if (!workshop) {
+      throw new NotFoundException('Workshop not found');
+    }
+
+    if (!workshop.attendanceRecords) {
+      workshop.attendanceRecords = [];
+    }
+
+    const records = workshop.attendanceRecords as unknown as AttendanceRecord[];
+
+    const existingRecord = records.find(
+      (record: AttendanceRecord) =>
+        record.dancerId.toString() === userId && !record.leaveTime,
+    );
+
+    if (existingRecord) {
+      existingRecord.joinTime = new Date();
+      existingRecord.status = 'pending';
+    } else {
+      workshop.attendanceRecords.push({
+        dancerId: new Types.ObjectId(userId),
+        joinTime: new Date(),
+        leaveTime: undefined,
+        duration: 0,
+        status: 'pending',
+      } as AttendanceRecord);
+    }
+
+    await this._workshopRepository.save(workshop);
+  }
+
+  async recordAttendanceLeave(
+    workshopId: string,
+    userId: string,
+  ): Promise<void> {
+    const workshop = await this._workshopRepository.findById(workshopId);
+    if (!workshop) {
+      throw new NotFoundException('Workshop not found');
+    }
+
+    if (!workshop.attendanceRecords) {
+      return;
+    }
+
+    const records = workshop.attendanceRecords as unknown as AttendanceRecord[];
+
+    const record = records.find(
+      (r) => r.dancerId.toString() === userId && !r.leaveTime,
+    );
+
+    if (record) {
+      record.leaveTime = new Date();
+      const durationMs = record.leaveTime.getTime() - record.joinTime.getTime();
+      record.duration = Math.floor(durationMs / (1000 * 60)); // Convert to minutes
+
+      const workshopDurationMs =
+        new Date(workshop.endDate).getTime() -
+        new Date(workshop.startDate).getTime();
+      const workshopDurationMinutes = workshopDurationMs / (1000 * 60);
+
+      const attendancePercentage =
+        (record.duration / workshopDurationMinutes) * 100;
+      record.status = attendancePercentage >= 70 ? 'present' : 'absent';
+
+      await this._workshopRepository.save(workshop);
+    }
   }
 }

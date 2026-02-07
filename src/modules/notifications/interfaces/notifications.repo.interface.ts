@@ -1,5 +1,6 @@
 import { SortOrder } from 'mongoose';
-import { Notification, NotificationType } from '../models/notification.schema';
+import { Notification } from '../models/notification.schema';
+import { NotificationType } from 'src/common/enums/notification-type.enum';
 import { FilterQuery, Types, UpdateQuery } from 'mongoose';
 
 export const INotificationRepoToken = Symbol('INotificationRepo');

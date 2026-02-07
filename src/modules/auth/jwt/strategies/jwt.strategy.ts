@@ -49,8 +49,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     let isAdmin = false;
 
     // Check if role indicates admin
-    // Note: Adjust logic depending on how you store roles.
-    // If exact string match 'admin' or enum:
     if (
       payload.role &&
       (payload.role.includes(Role.ADMIN) || payload.role.includes('admin'))

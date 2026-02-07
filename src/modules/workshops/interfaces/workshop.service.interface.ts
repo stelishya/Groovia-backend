@@ -95,4 +95,8 @@ export interface IWorkshopService {
       limit?: string;
     },
   ): Promise<PaginatedBookedWorkshops>;
+
+  // Attendance Methods
+  recordAttendanceJoin(workshopId: string, userId: string): Promise<void>;
+  recordAttendanceLeave(workshopId: string, userId: string): Promise<void>;
 }

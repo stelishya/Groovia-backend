@@ -1,12 +1,12 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Notification, NotificationType } from '../models/notification.schema';
+import { Notification } from '../models/notification.schema';
 import {
   type INotificationRepo,
   INotificationRepoToken,
   NotificationMetadata,
 } from '../interfaces/notifications.repo.interface';
 import { Types } from 'mongoose';
+import { NotificationType } from 'src/common/enums/notification-type.enum';
 
 @Injectable()
 export class NotificationService {

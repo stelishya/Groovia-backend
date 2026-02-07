@@ -7,13 +7,19 @@ import {
 import { Model, Types, FilterQuery, SortOrder, UpdateQuery } from 'mongoose';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
+import type { IConfigService } from 'src/common/interfaces/config-service.interface';
+import { IConfigServiceToken } from 'src/common/interfaces/config-service.interface';
 import { User, UserDocument } from '../../users/models/user.schema';
 import { EventDocument, Events } from '../models/events.schema';
 import {
-  IClientService,
+  type IClientService,
   PaymentInitiationResponse,
 } from '../interfaces/client.interface';
-import { NotificationType } from '../../notifications/models/notification.schema';
+import {
+  type IClientRepository,
+  IClientRepositoryToken,
+} from '../interfaces/client-repository.interface';
+import { NotificationType } from 'src/common/enums/notification-type.enum';
 import {
   type IUserService,
   IUserServiceToken,
@@ -61,7 +67,8 @@ type SavedEvent = Events & { _id: Types.ObjectId };
 @Injectable()
 export class ClientService implements IClientService {
   constructor(
-    @InjectModel(Events.name) private readonly _eventModel: Model<Events>,
+    @Inject(IClientRepositoryToken)
+    private readonly _clientRepository: IClientRepository,
     @Inject(IUserServiceToken)
     private readonly _userService: IUserService,
     @Inject(forwardRef(() => INotificationServiceToken))
@@ -72,8 +79,9 @@ export class ClientService implements IClientService {
     private readonly _paymentService: IPaymentService,
     @Inject(IPaymentsServiceToken)
     private readonly _paymentsService: IPaymentsService,
-    private readonly _configService: ConfigService,
-  ) {}
+    @Inject(IConfigServiceToken)
+    private readonly _configService: IConfigService,
+  ) { }
 
   async uploadProfilePicture(
     userId: string,
@@ -110,10 +118,7 @@ export class ClientService implements IClientService {
   }
 
   async findOne(id: string): Promise<Events> {
-    const event = await this._eventModel
-      .findById(id)
-      .populate('dancerId')
-      .populate('clientId');
+    const event = await this._clientRepository.findByIdPopulated(id);
     if (!event) {
       throw new NotFoundException('Event Request not found');
     }
@@ -124,7 +129,7 @@ export class ClientService implements IClientService {
     eventId: string,
     userId: string,
   ): Promise<PaymentInitiationResponse> {
-    const event = await this._eventModel.findById(eventId);
+    const event = await this._clientRepository.findById(eventId);
     if (!event) {
       throw new NotFoundException('Event not found');
     }
@@ -193,13 +198,12 @@ export class ClientService implements IClientService {
       throw new Error('Invalid payment signature');
     }
 
-    const updatedEvent = await this._eventModel.findByIdAndUpdate(
-      eventId,
+    const updatedEvent = await this._clientRepository.findOneAndUpdate(
+      { _id: eventId },
       {
         paymentStatus: 'paid',
         status: 'confirmed',
       },
-      { new: true },
     );
     if (!updatedEvent) {
       throw new NotFoundException('Event not found');
@@ -226,17 +230,16 @@ export class ClientService implements IClientService {
     eventId: string,
     userId: string,
   ): Promise<Events | null> {
-    const updatedEvent = await this._eventModel.findOneAndUpdate(
+    const updatedEvent = await this._clientRepository.findOneAndUpdate(
       { _id: eventId, paymentStatus: { $ne: 'failed' } },
       {
         paymentStatus: 'failed',
       },
-      { new: true },
     );
 
     if (!updatedEvent) {
       // Return current state if no update occurred
-      return this._eventModel.findById(eventId);
+      return this._clientRepository.findById(eventId);
     }
 
     console.log('updatedEvent markPaymentFailed', updatedEvent);
@@ -313,10 +316,11 @@ export class ClientService implements IClientService {
   ): Promise<Events> {
     const requestPayload = {
       ...createRequestDto,
-      clientId: new Types.ObjectId(clientId),
+      clientId: new Types.ObjectId(clientId) as any,
+      dancerId: new Types.ObjectId(createRequestDto.dancerId) as any,
+      date: new Date(createRequestDto.date),
     };
-    const newRequest = new this._eventModel(requestPayload);
-    const savedRequest = await newRequest.save();
+    const savedRequest = await this._clientRepository.create(requestPayload);
 
     // Get client details for notification
     const client = await this._userService.findById(clientId);
@@ -375,15 +379,14 @@ export class ClientService implements IClientService {
       sortOptions.createdAt = -1; // Default sort
     }
 
-    const requests = await this._eventModel
-      .find(query)
-      .populate('dancerId', 'username profileImage danceStyles')
-      .sort(sortOptions)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .exec();
+    const requests = await this._clientRepository.findWithPagination(
+      query,
+      sortOptions,
+      (page - 1) * limit,
+      limit,
+    );
 
-    const total = await this._eventModel.countDocuments(query);
+    const total = await this._clientRepository.countDocuments(query);
 
     return { requests, total };
   }
@@ -392,15 +395,13 @@ export class ClientService implements IClientService {
     eventId: string,
     statusDto: updateBookingStatusDto,
   ): Promise<Events> {
-    const event = await this._eventModel
-      .findById(eventId)
-      .populate<{ clientId: User; dancerId: User }>([
+    const event = await this._clientRepository.findByIdLeanPopulated(
+      eventId,
+      [
         { path: 'clientId', select: 'username' },
         { path: 'dancerId', select: 'username' },
-      ])
-      // .populate('dancerId', 'username')
-      .lean()
-      .exec();
+      ],
+    );
 
     if (!event) {
       throw new NotFoundException(`Event with ID ${eventId} not found`);
@@ -434,9 +435,11 @@ export class ClientService implements IClientService {
       updateData.acceptedAmount = statusDto.amount;
     }
 
-    const updatedEvent = await this._eventModel
-      .findByIdAndUpdate(eventId, updateData, { new: true, lean: true })
-      .exec();
+    const updatedEvent = await this._clientRepository.findOneAndUpdate(
+      { _id: eventId },
+      updateData,
+      { new: true, lean: true },
+    );
 
     if (!updatedEvent) {
       throw new NotFoundException(`Failed to update event ${eventId}`);

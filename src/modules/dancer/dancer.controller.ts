@@ -15,7 +15,6 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
-import { Request } from 'express';
 import { UpdateDancerProfileDto, CreateReviewDto } from './dto/dancer.dto';
 import { DancerService } from './dancer.service';
 // import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
@@ -32,20 +31,14 @@ import { HttpStatus } from 'src/common/enums/http-status.enum';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   type IDancerService,
-  DancerServiceToken,
+  type AuthRequest,
+  IDancerServiceToken,
 } from './interfaces/dancer.interface';
 
-interface AuthRequest extends Request {
-  user: {
-    userId: string;
-    email: string;
-    role: string[];
-  };
-}
 @Controller('dancers')
 export class DancerController {
   constructor(
-    @Inject(DancerServiceToken)
+    @Inject(IDancerServiceToken)
     private readonly dancerService: IDancerService,
     @Inject(IUserServiceToken)
     private readonly userService: IUserService,

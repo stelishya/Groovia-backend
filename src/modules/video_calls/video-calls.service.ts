@@ -33,7 +33,7 @@ export class VideoCallsService implements IVideoCallsService {
     private readonly workshopService: IWorkshopService,
     @Inject(ICompetitionServiceToken)
     private readonly competitionService: ICompetitionService,
-  ) {}
+  ) { }
 
   async startSession(
     sessionId: string,
@@ -162,45 +162,7 @@ export class VideoCallsService implements IVideoCallsService {
     workshopId: string,
     userId: string,
   ): Promise<ServiceOperationResult> {
-    const workshop = (await this.workshopService.findOne(
-      workshopId,
-    )) as WorkshopDocument;
-    if (!workshop) {
-      throw new NotFoundException('Workshop not found');
-    }
-
-    // Ensure attendanceRecords array exists
-    if (!workshop.attendanceRecords) {
-      workshop.attendanceRecords = [];
-    }
-
-    // Typed search
-    const records = workshop.attendanceRecords as unknown as AttendanceRecord[];
-
-    // Check if user already has a pending record
-    const existingRecord = records.find(
-      (record: AttendanceRecord) =>
-        record.dancerId.toString() === userId && !record.leaveTime,
-    );
-
-    if (existingRecord) {
-      // User rejoining - update join time
-      existingRecord.joinTime = new Date();
-      existingRecord.status = 'pending';
-    } else {
-      // if (!workshop.attendanceRecords) {
-      //   workshop.attendanceRecords = [];
-      // }
-      workshop.attendanceRecords.push({
-        dancerId: new Types.ObjectId(userId),
-        joinTime: new Date(),
-        leaveTime: undefined,
-        duration: 0,
-        status: 'pending',
-      });
-    }
-
-    await workshop.save();
+    await this.workshopService.recordAttendanceJoin(workshopId, userId);
     return { success: true };
   }
 
@@ -208,43 +170,7 @@ export class VideoCallsService implements IVideoCallsService {
     workshopId: string,
     userId: string,
   ): Promise<ServiceOperationResult> {
-    const workshop = (await this.workshopService.findOne(
-      workshopId,
-    )) as WorkshopDocument;
-    if (!workshop) {
-      throw new NotFoundException('Workshop not found');
-    }
-
-    if (!workshop.attendanceRecords) {
-      return { success: true };
-    }
-
-    const records = workshop.attendanceRecords as unknown as AttendanceRecord[];
-
-    // Find the active attendance record
-    const record = records.find(
-      (r) => r.dancerId.toString() === userId && !r.leaveTime,
-    );
-
-    if (record) {
-      record.leaveTime = new Date();
-      const durationMs = record.leaveTime.getTime() - record.joinTime.getTime();
-      record.duration = Math.floor(durationMs / (1000 * 60)); // Convert to minutes
-
-      // Calculate workshop duration
-      const workshopDurationMs =
-        new Date(workshop.endDate).getTime() -
-        new Date(workshop.startDate).getTime();
-      const workshopDurationMinutes = workshopDurationMs / (1000 * 60);
-
-      // Calculate attendance (70% threshold)
-      const attendancePercentage =
-        (record.duration / workshopDurationMinutes) * 100;
-      record.status = attendancePercentage >= 70 ? 'present' : 'absent';
-
-      await workshop.save();
-    }
-
+    await this.workshopService.recordAttendanceLeave(workshopId, userId);
     return { success: true };
   }
 

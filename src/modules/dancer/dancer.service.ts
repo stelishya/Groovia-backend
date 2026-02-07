@@ -1,34 +1,37 @@
 import {
   BadRequestException,
-  ConsoleLogger,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { FilterQuery, Model, Types } from 'mongoose';
+import { FilterQuery, Types } from 'mongoose';
 import { CertificateDto, UpdateDancerProfileDto } from './dto/dancer.dto';
 import {
   type IUserService,
   IUserServiceToken,
 } from '../users/interfaces/user.service.interface';
 import { User, UserDocument } from '../users/models/user.schema';
-import { InjectModel } from '@nestjs/mongoose';
 import { Events } from '../client/models/events.schema';
 import {
   type IStorageService,
   IStorageServiceToken,
 } from 'src/common/storage/interfaces/storage.interface';
 import { IDancerService } from './interfaces/dancer.interface';
+import {
+  type IClientRepository,
+  IClientRepositoryToken,
+} from '../client/interfaces/client-repository.interface';
 
 @Injectable()
 export class DancerService implements IDancerService {
   constructor(
     @Inject(IUserServiceToken)
     private readonly userService: IUserService,
-    @InjectModel(Events.name) private readonly _eventModel: Model<Events>,
+    @Inject(IClientRepositoryToken)
+    private readonly _eventRepository: IClientRepository,
     @Inject(IStorageServiceToken)
     private readonly storageService: IStorageService,
-  ) {}
+  ) { }
 
   async getProfileByUserId(userId: string): Promise<User> {
     const user = await this.userService.findById(userId);
@@ -185,15 +188,15 @@ export class DancerService implements IDancerService {
       sortOptions.createdAt = -1; // Default sort
     }
 
-    const requests = await this._eventModel
-      .find(query)
-      .populate('clientId', 'username profileImage')
-      .sort(sortOptions)
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .exec();
+    const requests = await this._eventRepository.findWithPaginationPopulated(
+      query,
+      sortOptions,
+      (page - 1) * limit,
+      limit,
+      [{ path: 'clientId', select: 'username profileImage' }],
+    );
 
-    const total = await this._eventModel.countDocuments(query);
+    const total = await this._eventRepository.countDocuments(query);
 
     return { requests, total };
   }

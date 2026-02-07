@@ -22,8 +22,8 @@ import {
   updateBookingStatusDto,
   UpdateClientProfileDto,
 } from '../dto/client.dto';
-import { ClientService } from '../services/client.service';
 import {
+  type AuthRequest,
   IClientInterfaceToken,
   type IClientService,
 } from '../interfaces/client.interface';
@@ -33,20 +33,12 @@ import { MESSAGES } from 'src/common/constants/constants';
 import { ApiResponse } from 'src/common/models/common-response.model';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
 
-interface AuthRequest extends Request {
-  user: {
-    userId: string;
-    email: string;
-    role: string[];
-  };
-}
-
 @Controller('clients')
 export class ClientController {
   constructor(
     @Inject(IClientInterfaceToken)
     private readonly _clientService: IClientService,
-  ) {}
+  ) { }
 
   @UseGuards(JwtAuthGuard)
   @Get('profile')

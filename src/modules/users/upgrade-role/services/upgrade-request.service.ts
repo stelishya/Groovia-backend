@@ -20,7 +20,7 @@ import {
 } from '../interface/upgrade-request.repo.interface';
 import { INotificationServiceToken } from 'src/modules/notifications/interfaces/notifications.service.interface';
 import type { INotificationService } from 'src/modules/notifications/interfaces/notifications.service.interface';
-import { NotificationType } from 'src/modules/notifications/models/notification.schema';
+import { NotificationType } from 'src/common/enums/notification-type.enum';
 import { Role } from 'src/common/enums/role.enum';
 import {
   type IPaymentService,

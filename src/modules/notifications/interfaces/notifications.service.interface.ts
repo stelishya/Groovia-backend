@@ -1,8 +1,9 @@
 export const INotificationServiceToken = 'INotificationService';
 
 import { Types } from 'mongoose';
-import { Notification, NotificationType } from '../models/notification.schema';
+import { Notification } from '../models/notification.schema';
 import { NotificationMetadata } from '../interfaces/notifications.repo.interface';
+import { NotificationType } from 'src/common/enums/notification-type.enum';
 
 export interface INotificationService {
   createNotification(

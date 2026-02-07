@@ -18,7 +18,7 @@ import { ICommonServiceToken } from '../../common/interfaces/common-service.inte
 import {
   type IOtpService,
   IOtpServiceToken,
-} from '../interfaces/otp.service.interface';
+} from '../../../../common/otp/interfaces/otp.service.interface';
 import {
   type IMailService,
   IMailServiceToken,
@@ -32,6 +32,8 @@ import {
 } from '../dto/user-auth.dto';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
+import type { IConfigService } from 'src/common/interfaces/config-service.interface';
+import { IConfigServiceToken } from 'src/common/interfaces/config-service.interface';
 import { HttpStatus } from 'src/common/enums/http-status.enum';
 import { Types } from 'mongoose';
 
@@ -47,8 +49,8 @@ export class UserAuthService implements IUserAuthService {
     @Inject(ICommonServiceToken)
     private readonly _commonService: ICommonService,
     @Inject(IMailServiceToken) private readonly _mailService: IMailService,
-    private readonly _configService: ConfigService,
-  ) {}
+    @Inject(IConfigServiceToken) private readonly _configService: IConfigService,
+  ) { }
 
   async login(
     email: string,

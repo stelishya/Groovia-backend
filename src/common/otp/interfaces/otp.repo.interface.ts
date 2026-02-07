@@ -1,5 +1,5 @@
 import { FilterQuery, UpdateQuery } from 'mongoose';
-import { Otp } from '../../../../common/otp/models/otp.schema';
+import { Otp } from '../models/otp.schema';
 
 export const IOtpRepositoryToken = Symbol('IOtpRepository');
 

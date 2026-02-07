@@ -4,12 +4,12 @@ import { FilterQuery, Model, SortOrder, Types, UpdateQuery } from 'mongoose';
 import {
   Notification,
   NotificationDocument,
-  NotificationType,
 } from '../models/notification.schema';
 import {
   INotificationRepo,
   NotificationMetadata,
 } from '../interfaces/notifications.repo.interface';
+import { NotificationType } from 'src/common/enums/notification-type.enum';
 
 @Injectable()
 export class NotificationRepository implements INotificationRepo {

@@ -5,6 +5,7 @@ import {
   UpdateClientProfileDto,
 } from '../dto/client.dto';
 import { Events } from '../models/events.schema';
+import { Request } from '@nestjs/common'
 
 export const IClientInterfaceToken = 'IClientService';
 
@@ -86,3 +87,12 @@ export interface PopulatedEvent extends Omit<Events, 'clientId' | 'dancerId'> {
   clientId: UserDocument;
   dancerId: UserDocument;
 }
+
+export interface AuthRequest extends Request {
+  user: {
+    userId: string;
+    email: string;
+    role: string[];
+  };
+}
+

@@ -12,13 +12,15 @@ import { RedisModule } from './common/redis/redis.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ClientModule } from './modules/client/client.module';
 import { DancerModule } from './modules/dancer/dancer.module';
-import { BookingsModule } from './modules/bookings/bookings.module';
 import { StorageModule } from './common/storage/storage.module';
 import { RazorpayModule } from './common/payments/razorpay/razorpay.module';
 import { WorkshopsModule } from './modules/workshops/workshops.module';
 import { CompetitionModule } from './modules/competitions/competition.module';
 import { VideoCallsModule } from './modules/video_calls/video-calls.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { IConfigServiceToken } from './common/interfaces/config-service.interface';
+import { IJwtServiceToken } from './common/interfaces/jwt-service.interface';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -53,6 +55,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
       },
       inject: [ConfigService],
     }),
+    JwtModule.register({}),
     AdminsModule,
     AuthModule,
     MailModule,
@@ -62,7 +65,6 @@ import { PaymentsModule } from './modules/payments/payments.module';
     NotificationsModule,
     ClientModule,
     DancerModule,
-    BookingsModule,
     StorageModule,
     RazorpayModule,
     WorkshopsModule,
@@ -70,7 +72,17 @@ import { PaymentsModule } from './modules/payments/payments.module';
     VideoCallsModule,
     PaymentsModule,
   ],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: IConfigServiceToken,
+      useExisting: ConfigService,
+    },
+    {
+      provide: IJwtServiceToken,
+      useExisting: JwtService,
+    },
+  ],
   controllers: [AppController],
 })
-export class AppModule {}
+export class AppModule { }

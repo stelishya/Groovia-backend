@@ -8,6 +8,12 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request, Response } from 'express';
+import type { IConfigService } from 'src/common/interfaces/config-service.interface';
+import { IConfigServiceToken } from 'src/common/interfaces/config-service.interface';
+import type { IJwtService } from 'src/common/interfaces/jwt-service.interface';
+import { IJwtServiceToken } from 'src/common/interfaces/jwt-service.interface';
+import type { IRedisService } from 'src/common/redis/interfaces/redis.service.interface';
+import { IRedisServiceToken } from 'src/common/redis/interfaces/redis.service.interface';
 import { Language, User } from 'src/modules/users/models/user.schema';
 import { ICommonService } from './interfaces/common-service.interface';
 import { OAuth2Client } from 'google-auth-library';
@@ -27,9 +33,12 @@ export class CommonService implements ICommonService {
   constructor(
     @Inject(IUserServiceToken)
     private readonly _userService: IUserService,
-    private readonly _jwtService: JwtService,
-    private readonly _configService: ConfigService,
-    private readonly _redisService: RedisService,
+    @Inject(IJwtServiceToken)
+    private readonly _jwtService: IJwtService,
+    @Inject(IConfigServiceToken)
+    private readonly _configService: IConfigService,
+    @Inject(IRedisServiceToken)
+    private readonly _redisService: IRedisService,
   ) {
     this._googleClient = new OAuth2Client(
       this._configService.get<string>('GOOGLE_CLIENT_ID'),

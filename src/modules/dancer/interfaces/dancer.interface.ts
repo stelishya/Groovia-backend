@@ -1,8 +1,9 @@
 import { User } from 'src/modules/users/models/user.schema';
 import { UpdateDancerProfileDto, CertificateDto } from '../dto/dancer.dto';
 import { Events } from 'src/modules/client/models/events.schema';
+import { Request } from 'express';
 
-export const DancerServiceToken = 'DancerServiceToken';
+export const IDancerServiceToken = 'IDancerService';
 
 export interface IDancerService {
   getProfileByUserId(userId: string): Promise<User>;
@@ -30,4 +31,12 @@ export interface IDancerService {
     },
   ): Promise<{ requests: Events[]; total: number }>;
   toggleLike(dancerId: string, userId: string): Promise<User>;
+}
+
+export interface AuthRequest extends Request {
+  user: {
+    userId: string;
+    email: string;
+    role: string[];
+  };
 }
