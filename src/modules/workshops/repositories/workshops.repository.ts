@@ -38,7 +38,7 @@ export class WorkshopsRepository {
 
         // Build MongoDB filter
         const mongoFilter: any = {
-            // startDate: { $gte: new Date() }
+            startDate: { $gte: new Date() }
         };
 
         if (search) {

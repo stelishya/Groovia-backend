@@ -94,8 +94,9 @@ export class CompetitionService implements ICompetitionService {
     page?: number;
     limit?: number;
   }): Promise<{ data: Competition[], total: number, page: number, totalPages: number }> {
-    const query: any = {};
-
+    const query: any = {
+      date: { $gte: new Date() }
+    };
     if (options?.search) {
       query.$or = [
         { title: { $regex: options.search, $options: 'i' } },
