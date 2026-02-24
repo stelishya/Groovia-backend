@@ -102,7 +102,7 @@ export class UserAuthService implements IUserAuthService {
                     throw new HttpException('Failed to create user after verification.', HttpStatus.INTERNAL_SERVER_ERROR);
                 }
             }
-            console.log(`new signup request for ${email}`);
+            console.log(`new signup request for ${username}- ${email}`);
             // console.log("without otp in user auth service")
             if (!username) {
                 throw new HttpException(

@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsMongoId, IsDateString, registerDecorator, ValidationOptions, ValidationArguments, IsOptional, IsEmail, Min, IsNumber } from 'class-validator';
+import { IsString, IsNotEmpty, IsMongoId, IsDateString, registerDecorator, ValidationOptions, ValidationArguments, IsOptional, IsEmail, Min, IsNumber, MinLength, MaxLength, Matches } from 'class-validator';
 
 // Custom validator to check if date is in the future
 function IsDateInFuture(validationOptions?: ValidationOptions) {
@@ -62,6 +62,9 @@ export class updateBookingStatusDto {
 export class UpdateClientProfileDto {
   @IsString()
   @IsOptional()
+  @MinLength(2)
+  @MaxLength(24)
+  @Matches(/^[a-zA-Z]+$/, { message: 'Username must contain only letters' })
   username?: string;
 
   @ApiPropertyOptional({ example: 'john@example.com' })
@@ -72,6 +75,7 @@ export class UpdateClientProfileDto {
   @ApiPropertyOptional({ example: "1234567890" })
   @IsString()
   @IsOptional()
+  @Matches(/^[0-9]{10}$/, { message: 'Phone number must be exactly 10 digits' })
   phone?: string;
 
   @ApiPropertyOptional({ example: "https://s3.amazonaws.com/bucket/profile.jpg" })

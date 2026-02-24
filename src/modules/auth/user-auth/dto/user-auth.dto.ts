@@ -35,8 +35,8 @@ export class SignupDto {
 
     @IsString()
     @MinLength(6, { message: 'Password must be at least 6 characters long' })
-    @Matches(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
-        message: 'Password must contain at least one letter, one number, and one special character'
+    @Matches(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!#%^_*?&])[A-Za-z\d@$!#%^_*?&]/, {
+        message: 'Password must contain at least one letter, one number, and one special character (@$!#%^_*?&)'
     })
     password: string;
 

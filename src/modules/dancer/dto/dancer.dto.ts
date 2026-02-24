@@ -1,11 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsBoolean, IsOptional, IsString, IsNumber, IsArray, Min, Max } from "class-validator";
+import { IsBoolean, IsOptional, IsString, IsNumber, IsArray, Min, Max, MinLength, MaxLength, Matches } from "class-validator";
 import { Types } from "mongoose";
 
 export class UpdateDancerProfileDto {
   @ApiPropertyOptional({ example: "johndoe" })
   @IsString()
   @IsOptional()
+  @MinLength(2)
+  @MaxLength(24)
+  @Matches(/^[a-zA-Z]+$/, { message: 'Username must contain only letters' })
   username?: string;
 
   @ApiPropertyOptional({ example: "john@example.com" })
@@ -16,6 +19,7 @@ export class UpdateDancerProfileDto {
   @ApiPropertyOptional({ example: "1234567890" })
   @IsString()
   @IsOptional()
+  @Matches(/^[0-9]{10}$/, { message: 'Phone number must be exactly 10 digits' })
   phone?: string;
 
   @ApiPropertyOptional({ example: "Passionate dancer with 5 years of experience" })
