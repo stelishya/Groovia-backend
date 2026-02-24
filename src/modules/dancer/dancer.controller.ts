@@ -163,8 +163,11 @@ export class DancerController {
         @Param('dancerId') dancerId: string,
         @ActiveUser('userId') userId: string,
     ) {
-        const updatedDancer = await this.dancerService.toggleLike(dancerId, userId);
-        // return { message: 'Like status updated successfully', dancer: updatedDancer };
-        return ApiResponse.success({ message: MESSAGES.LIKE_STATUS_UPDATED_SUCCESSFULLY, dancer: updatedDancer });
+        const { likesCount, isLiked } = await this.dancerService.toggleLike(dancerId, userId);
+        return ApiResponse.success({
+            message: MESSAGES.LIKE_STATUS_UPDATED_SUCCESSFULLY,
+            likesCount,
+            isLiked
+        });
     }
 }

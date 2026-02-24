@@ -49,7 +49,7 @@ export class UserAuthService implements IUserAuthService {
                 user.password,
             )
             if (!isPasswordValid) {
-                throw new UnauthorizedException('invalid password')
+                throw new UnauthorizedException('Invalid password')
             }
             if (user.isBlocked) {
                 console.log("user is blocked")
@@ -123,7 +123,7 @@ export class UserAuthService implements IUserAuthService {
                     {
                         success: false,
                         error: {
-                            message: 'username already exists',
+                            message: 'Username already exists',
                             usernameExists: true,
                             emailExists: false
                         }
@@ -146,11 +146,12 @@ export class UserAuthService implements IUserAuthService {
             }
             const existingEmail = await this._userService.findByEmail(email)
             if (existingEmail) {
+                console.log("Email already exists")
                 throw new HttpException(
                     {
                         success: false,
                         error: {
-                            message: 'email already exists',
+                            message: 'Email already exists',
                             usernameExists: false,
                             emailExists: true
                         }

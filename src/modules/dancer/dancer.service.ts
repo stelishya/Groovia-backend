@@ -155,7 +155,7 @@ export class DancerService implements IDancerService {
         return { requests, total };
     }
 
-    async toggleLike(dancerId: string, userId: string): Promise<User> {
+    async toggleLike(dancerId: string, userId: string): Promise<{ likesCount: number; isLiked: boolean }> {
         if (!Types.ObjectId.isValid(dancerId)) {
             throw new BadRequestException('Invalid Dancer ID');
         }
@@ -175,25 +175,31 @@ export class DancerService implements IDancerService {
         const likes = Array.isArray(dancer.likes) ? dancer.likes : [];
         const isLiked = likes.some(id => id.toString() === userId);
 
-        let updatedDancer;
+        let finalDancer;
         if (isLiked) {
             // User has already liked, so remove the like
-            updatedDancer = await this.userService.updateOne(
+            finalDancer = await this.userService.updateOne(
                 { _id: new Types.ObjectId(dancerId) },
                 { $pull: { likes: userObjectId } }
             );
         } else {
             // User has not liked yet, so add the like
-            updatedDancer = await this.userService.updateOne(
+            finalDancer = await this.userService.updateOne(
                 { _id: new Types.ObjectId(dancerId) },
                 { $addToSet: { likes: userObjectId } }
             );
         }
 
-        if (!updatedDancer) {
+        if (!finalDancer) {
             throw new BadRequestException('Failed to update like status');
         }
 
-        return updatedDancer;
+        const newLikes = Array.isArray(finalDancer.likes) ? finalDancer.likes : [];
+        const newIsLiked = newLikes.some(id => id.toString() === userId);
+
+        return {
+            likesCount: newLikes.length,
+            isLiked: newIsLiked
+        };
     }
 }

@@ -291,7 +291,6 @@ export class ClientService implements IClientService {
         const query: any = { clientId };
 
         if (search) {
-            // This is a simple search on the 'event' field. You might want to expand this.
             query.event = { $regex: search, $options: 'i' };
         }
 

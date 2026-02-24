@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsMongoId, IsDateString, registerDecorator, ValidationOptions, ValidationArguments, IsOptional, IsEmail } from 'class-validator';
+import { IsString, IsNotEmpty, IsMongoId, IsDateString, registerDecorator, ValidationOptions, ValidationArguments, IsOptional, IsEmail, Min, IsNumber } from 'class-validator';
 
 // Custom validator to check if date is in the future
 function IsDateInFuture(validationOptions?: ValidationOptions) {
@@ -54,7 +54,8 @@ export class updateBookingStatusDto {
   status: string;
 
   @IsOptional()
-  // @IsNumber() // Ensure you import IsNumber if you want validation
+  @IsNumber()
+  @Min(0, { message: 'Booking amount cannot be negative' })
   amount?: number;
 }
 

@@ -1,20 +1,52 @@
-export interface VerifyOtpDto {
+import { IsString, IsEmail, MinLength, MaxLength, Matches, IsEnum, IsOptional, ArrayMinSize, IsArray } from 'class-validator';
+
+export class VerifyOtpDto {
+    @IsEmail()
     email: string;
+
+    @IsString()
+    @MinLength(6)
+    @MaxLength(6)
     otp: string;
 }
 
-export interface LoginDto {
+export class LoginDto {
+    @IsEmail()
     email: string;
+
+    @IsString()
     password: string;
 }
 
-export interface SignupDto {
+export class SignupDto {
+    @IsString()
+    @MinLength(2)
+    @MaxLength(24)
+    @Matches(/^[a-zA-Z]+$/, { message: 'Username must contain only letters' })
     username: string;
+
+    @IsEmail()
     email: string;
-    // phone:string;
+
+    @IsArray()
+    @ArrayMinSize(1)
+    @IsEnum(['dancer', 'client'], { each: true })
     role: ('dancer' | 'client')[];
+
+    @IsString()
+    @MinLength(6, { message: 'Password must be at least 6 characters long' })
+    @Matches(/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
+        message: 'Password must contain at least one letter, one number, and one special character'
+    })
     password: string;
+
+    @IsString()
     confirmPassword: string;
+
+    @IsOptional()
+    @IsString()
+    @MinLength(6)
+    @MaxLength(6)
     otp?: string;
 }
 
