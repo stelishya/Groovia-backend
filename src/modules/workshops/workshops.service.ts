@@ -135,10 +135,19 @@ export class WorkshopsService implements IWorkshopService {
         }
         // If a new file is uploaded, upload to S3
         if (file && file.buffer) {
+            const workshop = await this._workshopRepository.findById(id);
+            if (workshop && (workshop as any).status?.toLowerCase() === 'completed') {
+                throw new BadRequestException('Cannot update a completed workshop');
+            }
             const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
             const fileName = `workshops/${uniqueSuffix}-${file.originalname}`;
             const uploadResult = await this.awsS3Service.uploadBuffer(file.buffer, fileName, file.mimetype);
             updateData.posterImage = uploadResult.Location;
+        }
+
+        const workshop = await this._workshopRepository.findById(id);
+        if (workshop && (workshop as any).status?.toLowerCase() === 'completed') {
+            throw new BadRequestException('Cannot update a completed workshop');
         }
 
         const updatedWorkshop = await this._workshopRepository.update(id, updateData);
@@ -153,6 +162,10 @@ export class WorkshopsService implements IWorkshopService {
     }
 
     async remove(id: string): Promise<void> {
+        const workshop = await this._workshopRepository.findById(id);
+        if (workshop && (workshop as any).status?.toLowerCase() === 'completed') {
+            throw new BadRequestException('Cannot delete a completed workshop');
+        }
         const result = await this._workshopRepository.delete(id);
         if (!result) {
             throw new NotFoundException(`Workshop with ID ${id} not found`);

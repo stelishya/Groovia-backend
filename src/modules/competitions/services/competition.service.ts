@@ -317,6 +317,11 @@ export class CompetitionService implements ICompetitionService {
       updateData.registrationDeadline = new Date(updateData.registrationDeadline);
     }
 
+    const competitionToUpdate = await this._competitionRepository.findById(id);
+    if (competitionToUpdate && (competitionToUpdate as any).status?.toLowerCase() === 'completed') {
+      throw new BadRequestException('Cannot update a completed competition');
+    }
+
     const competition = await this._competitionRepository.update(id, updateData);
     console.log("Update Service - Competition:", competition);
     if (!competition) {
@@ -329,6 +334,10 @@ export class CompetitionService implements ICompetitionService {
   }
 
   async remove(id: string): Promise<void> {
+    const competition = await this._competitionRepository.findById(id);
+    if (competition && (competition as any).status?.toLowerCase() === 'completed') {
+      throw new BadRequestException('Cannot delete a completed competition');
+    }
     await this._competitionRepository.delete(id);
   }
 
