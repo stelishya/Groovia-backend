@@ -57,7 +57,7 @@ export class CompetitionService implements ICompetitionService {
       const sanitizedName = posterFile.originalname.replace(/\s+/g, '-');
       const fileName = `competitions/${uniqueSuffix}-${sanitizedName}`;
       const uploadResult = await this._storageService.uploadBuffer(posterFile.buffer, fileName, posterFile.mimetype);
-      posterImage = uploadResult.Location;
+      posterImage = uploadResult;
       console.log("Competition image uploaded to S3:", posterImage);
     }
 
@@ -67,7 +67,7 @@ export class CompetitionService implements ICompetitionService {
       const sanitizedName = documentFile.originalname.replace(/\s+/g, '-');
       const fileName = `competitions/documents/${uniqueSuffix}-${sanitizedName}`;
       const uploadResult = await this._storageService.uploadBuffer(documentFile.buffer, fileName, documentFile.mimetype);
-      documentUrl = uploadResult.Location;
+      documentUrl = uploadResult;
       console.log("Competition document uploaded to S3:", documentUrl);
     }
     const competitionData = {
@@ -283,7 +283,7 @@ export class CompetitionService implements ICompetitionService {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const fileName = `competitions/${uniqueSuffix}-${posterFile.originalname}`;
       const uploadResult = await this._storageService.uploadBuffer(posterFile.buffer, fileName, posterFile.mimetype);
-      posterImage = uploadResult.Location;
+      posterImage = uploadResult;
       console.log("Competition image updated to S3:", posterImage);
     }
     // Upload new document to S3 if provided
@@ -291,7 +291,7 @@ export class CompetitionService implements ICompetitionService {
       const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
       const fileName = `competitions/documents/${uniqueSuffix}-${documentFile.originalname}`;
       const uploadResult = await this._storageService.uploadBuffer(documentFile.buffer, fileName, documentFile.mimetype);
-      documentUrl = uploadResult.Location;
+      documentUrl = uploadResult;
       console.log("Competition document updated to S3:", documentUrl);
     }
     const updateData: any = { ...updateCompetitionDto };

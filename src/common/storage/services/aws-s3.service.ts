@@ -1,8 +1,9 @@
+/* 
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import AWS from 'aws-sdk';
 import * as fs from 'fs';
-import { IStorageService } from './interfaces/storage.interface';
+import { IStorageService } from '../interfaces/storage.interface';
 
 @Injectable()
 export class AwsS3Service implements IStorageService {
@@ -26,12 +27,6 @@ export class AwsS3Service implements IStorageService {
     this.bucketName = bucketName;
   }
 
-  /**
-   * Upload a file from local filesystem to S3
-   * @param filePath - Local file path
-   * @param fileName - S3 key/filename (e.g., 'uploads/profile.jpg')
-   * @returns Promise with upload result
-   */
   async uploadFile(
     filePath: string,
     fileName: string,
@@ -42,11 +37,9 @@ export class AwsS3Service implements IStorageService {
         Bucket: this.bucketName,
         Key: fileName,
         Body: fileContent,
-        // ACL removed - bucket uses bucket policy for public access
       };
 
       const result = await this.s3.upload(params).promise();
-      console.log("result in uploadFile in aws-s3.service.ts : ", result)
       this.logger.log(`File uploaded successfully at: ${result.Location}`);
       return result;
     } catch (error) {
@@ -55,13 +48,6 @@ export class AwsS3Service implements IStorageService {
     }
   }
 
-  /**
-   * Upload a file buffer to S3 (useful for multer uploads)
-   * @param buffer - File buffer
-   * @param fileName - S3 key/filename
-   * @param mimetype - File mimetype
-   * @returns Promise with upload result
-   */
   async uploadBuffer(
     buffer: Buffer,
     fileName: string,
@@ -73,7 +59,6 @@ export class AwsS3Service implements IStorageService {
         Key: fileName,
         Body: buffer,
         ContentType: mimetype,
-        // ACL removed - bucket uses bucket policy for public access
       };
 
       const result = await this.s3.upload(params).promise();
@@ -85,11 +70,6 @@ export class AwsS3Service implements IStorageService {
     }
   }
 
-  /**
-   * Delete a file from S3
-   * @param fileName - S3 key/filename to delete
-   * @returns Promise with delete result
-   */
   async deleteFile(fileName: string): Promise<AWS.S3.DeleteObjectOutput> {
     try {
       const params: AWS.S3.DeleteObjectRequest = {
@@ -106,11 +86,6 @@ export class AwsS3Service implements IStorageService {
     }
   }
 
-  /**
-   * Get a file from S3
-   * @param fileName - S3 key/filename to retrieve
-   * @returns Promise with file data
-   */
   async getFile(fileName: string): Promise<AWS.S3.GetObjectOutput> {
     try {
       const params: AWS.S3.GetObjectRequest = {
@@ -127,12 +102,6 @@ export class AwsS3Service implements IStorageService {
     }
   }
 
-  /**
-   * Get a signed URL for temporary access to a private file
-   * @param fileName - S3 key/filename
-   * @param expiresIn - URL expiration time in seconds (default: 3600)
-   * @returns Signed URL
-   */
   async getSignedUrl(fileName: string, expiresIn: number = 3600): Promise<string> {
     const params = {
       Bucket: this.bucketName,
@@ -143,10 +112,6 @@ export class AwsS3Service implements IStorageService {
     return this.s3.getSignedUrlPromise('getObject', params);
   }
 
-  /**
-   * List all buckets (for testing)
-   * @returns Promise with bucket list
-   */
   async listBuckets(): Promise<AWS.S3.ListBucketsOutput> {
     try {
       const result = await this.s3.listBuckets().promise();
@@ -158,3 +123,4 @@ export class AwsS3Service implements IStorageService {
     }
   }
 }
+*/
