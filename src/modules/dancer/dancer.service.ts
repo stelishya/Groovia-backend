@@ -39,12 +39,12 @@ export class DancerService implements IDancerService {
 
         // Update user profile with new image URL
         const userDetails = await this.updateProfile(userId, {
-            profileImage: result.Location
+            profileImage: result
         });
 
         return {
             user: userDetails,
-            imageUrl: result.Location
+            imageUrl: result
         };
     }
 
@@ -74,7 +74,7 @@ export class DancerService implements IDancerService {
         // Create new certificate object
         const newCertificate = {
             name,
-            url: result.Location,
+            url: result,
             fileType
         };
 

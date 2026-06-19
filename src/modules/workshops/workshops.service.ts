@@ -22,7 +22,7 @@ export class WorkshopsService implements IWorkshopService {
     constructor(
         @Inject(IWorkshopRepoToken)
         private readonly _workshopRepository: IWorkshopRepo,
-        @Inject(IStorageServiceToken) private readonly awsS3Service: IStorageService,
+        @Inject(IStorageServiceToken) private readonly storageService: IStorageService,
         @Inject(IPaymentServiceToken) private readonly razorpayService: IPaymentService,
         @Inject(IPaymentsServiceToken) private readonly paymentsService: IPaymentsService,
         @Inject(INotificationServiceToken) private readonly notificationService: INotificationService,
@@ -49,7 +49,7 @@ export class WorkshopsService implements IWorkshopService {
             const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
             const sanitizedName = file.originalname.replace(/\s+/g, '-');
             const fileName = `workshops/${uniqueSuffix}-${sanitizedName}`;
-            const uploadResult = await this.awsS3Service.uploadBuffer(file.buffer, fileName, file.mimetype);
+            const uploadResult = await this.storageService.uploadBuffer(file.buffer, fileName, file.mimetype);
             posterImage = uploadResult.Location;
             console.log("Image uploaded to S3:", posterImage);
         }
@@ -141,7 +141,7 @@ export class WorkshopsService implements IWorkshopService {
             }
             const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
             const fileName = `workshops/${uniqueSuffix}-${file.originalname}`;
-            const uploadResult = await this.awsS3Service.uploadBuffer(file.buffer, fileName, file.mimetype);
+            const uploadResult = await this.storageService.uploadBuffer(file.buffer, fileName, file.mimetype);
             updateData.posterImage = uploadResult.Location;
         }
 
@@ -356,10 +356,10 @@ export class WorkshopsService implements IWorkshopService {
 
     private async addSignedUrlsToWorkshop(workshop: any): Promise<any> {
         if (workshop.posterImage) {
-            workshop.posterImage = await StorageUtils.getSignedUrl(this.awsS3Service, workshop.posterImage);
+            workshop.posterImage = await StorageUtils.getSignedUrl(this.storageService, workshop.posterImage);
         }
         if (workshop.instructor?.profileImage) {
-            workshop.instructor.profileImage = await StorageUtils.getSignedUrl(this.awsS3Service, workshop.instructor.profileImage);
+            workshop.instructor.profileImage = await StorageUtils.getSignedUrl(this.storageService, workshop.instructor.profileImage);
         }
         return workshop;
     }

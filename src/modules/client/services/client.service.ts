@@ -53,7 +53,7 @@ export class ClientService implements IClientService {
         const fileName = `profiles/${userObjectId}-${Date.now()}-${sanitizedName}`;
 
         // Upload to S3
-        const result = await this._storageService.uploadBuffer(
+        const ImageUrl = await this._storageService.uploadBuffer(
             file.buffer,
             fileName,
             file.mimetype
@@ -61,12 +61,14 @@ export class ClientService implements IClientService {
 
         // Update user profile with new image URL
         const updatedUser = await this.updateClientProfile(userId, {
-            profileImage: result.Location
+            profileImage: ImageUrl
+            // result.Location
         });
 
         return {
             user: updatedUser,
-            imageUrl: result.Location
+            imageUrl: ImageUrl
+            // result.Location
         };
     }
 

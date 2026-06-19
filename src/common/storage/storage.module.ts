@@ -1,13 +1,18 @@
-import {Global, Module } from '@nestjs/common';
-import { AwsS3Service } from './aws-s3.service';
+import { Global, Module } from '@nestjs/common';
+import { CloudinaryService } from './services/cloudinary.service';
 import { IStorageServiceToken } from './interfaces/storage.interface';
+import { ConfigModule } from '@nestjs/config';
 
 @Global()
 @Module({
-    providers:[{
-          provide: IStorageServiceToken,
-          useClass: AwsS3Service
-        },],
-    exports:[IStorageServiceToken]
+    imports: [ConfigModule],
+    providers: [
+        CloudinaryService,
+        {
+            provide: IStorageServiceToken,
+            useClass: CloudinaryService
+        }
+    ],
+    exports: [IStorageServiceToken]
 })
-export class StorageModule {}
+export class StorageModule { }
