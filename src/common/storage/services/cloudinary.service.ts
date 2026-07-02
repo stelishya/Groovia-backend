@@ -23,8 +23,11 @@ export class CloudinaryService implements IStorageService {
     let public_id = fileName;
 
     if (lastSlashIndex !== -1) {
-      folder = fileName.substring(0, lastSlashIndex);
+      folder = 'groovia/' + fileName.substring(0, lastSlashIndex);
       public_id = fileName.substring(lastSlashIndex + 1);
+    } else {
+      folder = 'groovia';
+      public_id = fileName;
     }
 
     // Remove file extension from public_id as Cloudinary adds it automatically based on format
@@ -64,8 +67,11 @@ export class CloudinaryService implements IStorageService {
     let public_id = fileName;
 
     if (lastSlashIndex !== -1) {
-      folder = fileName.substring(0, lastSlashIndex);
+      folder = 'groovia/' + fileName.substring(0, lastSlashIndex);
       public_id = fileName.substring(lastSlashIndex + 1);
+    } else {
+      folder = 'groovia';
+      public_id = fileName;
     }
 
     const lastDotIndex = public_id.lastIndexOf('.');
